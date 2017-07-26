@@ -1,0 +1,7 @@
+{
+  "name": "Volumetric",
+  "short_name": "Volumetric",
+  "description": "Visual Interface for Volatility 3",
+  "start_url": "/",
+  "display": "standalone"
+}

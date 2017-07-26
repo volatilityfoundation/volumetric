@@ -1,0 +1,140 @@
+<link rel="import" href="/resources/bower_components/polymer/polymer-element.html">
+<link rel="import" href="/resources/bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="/resources/bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="/resources/bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+<link rel="import" href="/resources/bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="/resources/bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="/resources/bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="/resources/bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/resources/bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="/resources/bower_components/app-route/app-location.html">
+<link rel="import" href="/resources/bower_components/app-route/app-route.html">
+
+<dom-module id="volumetric-shell">
+    <template>
+        <style>
+            :host {
+                display: block;
+                margin: 0px;
+                font-family: Sans-Serif;
+            }
+
+            paper-progress {
+                width: 100%;
+            }
+
+            .edge-fade {
+                width: 2px;
+                height: 50%;
+                margin: 0px 10px 0px 10px;
+                background-repeat: no-repeat;
+                background-position: 0 0;
+                background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, hsla(0, 0%, 0%, 0)), color-stop(50%, hsla(0, 0%, 0%, .4)), color-stop(100%, hsla(0, 0%, 0%, 0)));
+                background-image: -webkit-linear-gradient(top, hsla(0, 0%, 0%, 0) 0%, hsla(0, 0%, 0%, .4) 50%, hsla(0, 0%, 0%, 0) 100%);
+                background-image: -moz-linear-gradient(top, hsla(0, 0%, 0%, 0) 0%, hsla(0, 0%, 0%, .4) 50%, hsla(0, 0%, 0%, 0) 100%);
+                background-image: -ms-linear-gradient(top, hsla(0, 0%, 0%, 0) 0%, hsla(0, 0%, 0%, .4) 50%, hsla(0, 0%, 0%, 0) 100%);
+                background-image: -o-linear-gradient(top, hsla(0, 0%, 0%, 0) 0%, hsla(0, 0%, 0%, .4) 50%, hsla(0, 0%, 0%, 0) 100%);
+                background-image: linear-gradient(to bottom, hsla(0, 0%, 0%, 0) 0%, hsla(0, 0%, 50%, .4) 50%, hsla(0, 0%, 0%, 0) 100%);
+            }
+        </style>
+
+        <app-location route="{{route}}"></app-location>
+        <app-route
+                route="{{route}}"
+                pattern="[[rootPattern]]:page"
+                data="{{routeData}}"
+                tail="{{subroute}}"></app-route>
+
+        <app-header slot="header" condenses fixed effects="waterfall">
+            <app-toolbar>
+                <paper-icon-button src="/resources/images/volatility.svg" drawer-toggle></paper-icon-button>
+                <div>Volumetric</div>
+                <div class="edge-fade"></div>
+                <div main-title>Plugins</div>
+                <paper-progress value="[[progress]]" bottom-item></paper-progress>
+            </app-toolbar>
+        </app-header>
+
+        <iron-pages
+                selected="[[page]]"
+                attr-for-selected="name"
+                fallback-selection="404"
+                role="main">
+            <volumetric-plugins name="plugins"></volumetric-plugins>
+            <volumetric-config name="config"></volumetric-config>
+            <volumetric-results name="results"></volumetric-results>
+            <volumetric-404 name="404"></volumetric-404>
+        </iron-pages>
+    </template>
+
+    <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class VolumetricShell extends Polymer.Element {
+        static get is() {
+            return 'volumetric-shell';
+        }
+
+        static get properties() {
+            return {
+                page: {
+                    type: String,
+                    reflectToAttribute: true,
+                    observer: '_pageChanged',
+                },
+                rootPattern: String,
+                routeData: Object,
+                subroute: String,
+                progress: {
+                    value: 0,
+                    type: Number
+                },
+            };
+        }
+
+        static get observers() {
+            return [
+                '_routePageChanged(routeData.page)',
+            ];
+        }
+
+        constructor() {
+            super();
+
+            // Get root pattern for app-route, for more info about `rootPath` see:
+            // https://www.polymer-project.org/2.0/docs/upgrade#urls-in-templates
+            this.rootPattern = (new URL(this.rootPath)).pathname;
+        }
+
+        _routePageChanged(page) {
+            // Polymer 2.0 will call with `undefined` on initialization.
+            // Ignore until we are properly called with a string.
+            if (page === undefined) {
+                return;
+            }
+
+            // If no page was found in the route data, page will be an empty string.
+            // Deault to 'view1' in that case.
+            this.page = page || 'plugins';
+        }
+
+        _pageChanged(page) {
+            // Load page import on demand. Show 404 page if fails
+            var resolvedPageUrl = this.resolveUrl('volumetric-' + page + '.html');
+            Polymer.importHref(
+                resolvedPageUrl,
+                null,
+                this._showPage404.bind(this),
+                true);
+        }
+
+        _showPage404() {
+            this.page = '404';
+        }
+    }
+
+    window.customElements.define(VolumetricShell.is, VolumetricShell);
+  </script>
+</dom-module>

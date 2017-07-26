@@ -1,0 +1,30 @@
+{
+  "name": "volumetric",
+  "description": "Visual interface for volatility 3",
+  "main": "vol.py",
+  "authors": [
+    "Mike Auty <mike.auty@gmail.com>"
+  ],
+  "license": "VFCL",
+  "keywords": [
+    "volatility",
+    "gui"
+  ],
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "^2.0.2",
+    "app-route": "PolymerElements/app-route#2.0-preview",
+    "app-layout": "^2.0.1",
+    "paper-icon-button": "^2.0.0",
+    "iron-pages": "^2.0.0",
+    "paper-progress": "^2.0.1"
+  }
+}
