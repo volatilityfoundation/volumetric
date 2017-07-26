@@ -1,12 +1,17 @@
 import argparse
+import os
 
 import cherrypy
+from cherrypy.lib.static import serve_file
+
+basedir = os.path.dirname(os.path.dirname(__file__))
 
 
 class VolumetricServer(object):
     def __init__(self, arguments):
-        self.port = arguments.port
+        self.debug = arguments.debug
         self.ssl = arguments.ssl
+        self.port = arguments.port
         self.thread_pool_size = 10  # arguments.thread_pool_size or 100
         self.log_location = arguments.log
         self.server = None
@@ -14,21 +19,28 @@ class VolumetricServer(object):
     @classmethod
     def get_argument_parser(cls):
         parser = argparse.ArgumentParser()
+        parser.add_argument("-d", "--debug", action = "store_true", help = "Enable debugging information",
+                            default = False)
         parser.add_argument("-s", "--ssl", action = "store_true", help = "Enable SSL for the server", default = False)
         parser.add_argument("-p", "--port", metavar = "PORT", type = int, help = "Port on which the server will run",
-                            default = 8443)
+                            default = 8000)
         parser.add_argument("-l", "--log", default = None, help = "Log file location")
         return parser
 
     def run(self):
-        print("Blah")
         configuration = {'server.socket_port': self.port,
                          'server.thread_pool': self.thread_pool_size}
-        #  'environment': 'development',
+        if not self.debug:
+            configuration.update({'environment': 'production'})
 
         cherrypy.config.update(configuration)
 
-        cherrypy.quickstart(self)
+        site_config = {'/': {'tools.gzip.on': True},
+                       '/resources': {'tools.staticdir.on': True,
+                                      'tools.staticdir.dir': os.path.join(
+                                          os.path.dirname(os.path.dirname(__file__)), 'resources')}}
+
+        cherrypy.quickstart(self, '/', site_config)
 
         if self.ssl:
             cherrypy.server.ssl_certificate = "cert.pem"
@@ -38,4 +50,4 @@ class VolumetricServer(object):
 
     @cherrypy.expose
     def index(self):
-        return "Hello world!"
+        return serve_file(os.path.join(basedir, 'volumetric', 'index.html'))
