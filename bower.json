@@ -25,6 +25,11 @@
     "app-layout": "^2.0.1",
     "paper-icon-button": "^2.0.0",
     "iron-pages": "^2.0.0",
-    "paper-progress": "^2.0.1"
+    "paper-progress": "^2.0.1",
+    "paper-listbox": "^2.0.0",
+    "paper-dropdown-menu": "^2.0.0",
+    "iron-ajax": "^2.0.2",
+    "paper-item": "^2.0.0",
+    "paper-collapse-item": "^2.0.2"
   }
 }

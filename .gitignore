@@ -1,5 +1,9 @@
+# Generated files, not to be committed
 *.pyc
 __pycache__
 .idea
 bower_components
 node_modules
+
+# Symlink of the volatility code for testing
+volatility

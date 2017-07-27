@@ -36,6 +36,10 @@
                 background-image: -o-linear-gradient(top, hsla(0, 0%, 0%, 0) 0%, hsla(0, 0%, 0%, .4) 50%, hsla(0, 0%, 0%, 0) 100%);
                 background-image: linear-gradient(to bottom, hsla(0, 0%, 0%, 0) 0%, hsla(0, 0%, 50%, .4) 50%, hsla(0, 0%, 0%, 0) 100%);
             }
+
+            .text-capitalize {
+                text-transform: capitalize;
+            }
         </style>
 
         <app-location route="{{route}}"></app-location>
@@ -47,10 +51,11 @@
 
         <app-header slot="header" condenses fixed effects="waterfall">
             <app-toolbar>
-                <paper-icon-button src="/resources/images/volatility.svg" drawer-toggle></paper-icon-button>
+                <paper-icon-button src="/resources/images/volatility.svg"></paper-icon-button>
                 <div>Volumetric</div>
                 <div class="edge-fade"></div>
-                <div main-title>Plugins</div>
+                <div class="text-capitalize" main-title>[[page]]</div>
+                <paper-icon-button icon="settings"></paper-icon-button>
                 <paper-progress value="[[progress]]" bottom-item></paper-progress>
             </app-toolbar>
         </app-header>
@@ -60,8 +65,8 @@
                 attr-for-selected="name"
                 fallback-selection="404"
                 role="main">
-            <volumetric-plugins name="plugins"></volumetric-plugins>
-            <volumetric-config name="config"></volumetric-config>
+            <volumetric-plugins name="plugins" page="{{page}}" plugin="{{plugin}}"></volumetric-plugins>
+            <volumetric-config name="config" plugin="{{plugin}}"></volumetric-config>
             <volumetric-results name="results"></volumetric-results>
             <volumetric-404 name="404"></volumetric-404>
         </iron-pages>

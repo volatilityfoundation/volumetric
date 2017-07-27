@@ -4,6 +4,8 @@ import os
 import cherrypy
 from cherrypy.lib.static import serve_file
 
+import volumetric.api
+
 basedir = os.path.dirname(os.path.dirname(__file__))
 
 
@@ -15,6 +17,7 @@ class VolumetricServer(object):
         self.thread_pool_size = 10  # arguments.thread_pool_size or 100
         self.log_location = arguments.log
         self.server = None
+        self.api = volumetric.api.Api()
 
     @classmethod
     def get_argument_parser(cls):
@@ -35,7 +38,8 @@ class VolumetricServer(object):
 
         cherrypy.config.update(configuration)
 
-        site_config = {'/': {'tools.gzip.on': True},
+        site_config = {'/': {'tools.gzip.on': True,
+                             'tools.sessions.on': True},
                        '/resources': {'tools.staticdir.on': True,
                                       'tools.staticdir.dir': os.path.join(
                                           os.path.dirname(os.path.dirname(__file__)), 'resources')}}

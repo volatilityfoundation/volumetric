@@ -1,0 +1,98 @@
+<link rel="import" href="/resources/bower_components/polymer/polymer-element.html">
+<link rel="import" href="/resources/bower_components/paper-collapse-item/paper-collapse-item.html">
+<link rel="import" href="/resources/bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="/resources/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/resources/bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="volumetric-plugins">
+    <template>
+    <style>
+      :host {
+          display: block;
+
+          padding: 10px;
+      }
+
+      paper-collapse-item {
+          text-transform: capitalize;
+      }
+    </style>
+
+        <iron-ajax url="/api/plugins/list" last-response="{{items}}" auto></iron-ajax>
+        <iron-ajax id="ajax_select_plugin" url$="/api/plugins/select?plugin={{plugin}}"></iron-ajax>
+
+        <template is="dom-repeat" items="[[_top_level(items)]]">
+            <paper-collapse-item header="[[item]]">
+                <paper-listbox>
+                    <template is="dom-repeat" items="[[_filtered(items, item)]]" as="subitem">
+                        <paper-item value="{{subitem}}" on-tap="_select_plugin">{{_friendly_name(subitem)}}</paper-item>
+                    </template>
+                </paper-listbox>
+            </paper-collapse-item>
+        </template>
+
+    </template>
+
+    <script>
+    class VolumetricPlugins extends Polymer.Element {
+        static get is() {
+            return 'volumetric-plugins';
+        }
+
+        static get properties() {
+            return {
+                'page': {
+                    type: String,
+                    notify: true
+                },
+                'plugin': {
+                    type: String,
+                    notify: true
+                }
+            }
+        }
+
+        _friendly_name(item) {
+            return item.substring(item.lastIndexOf(".") + 1, item.length);
+        }
+
+        _filtered(items, item) {
+            var result = [];
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].substring(0, item.length) === item) {
+                    result.push(items[i]);
+                }
+            }
+            return result;
+        }
+
+        _select_plugin(e) {
+            this.plugin = e.target.value;
+            this.$.ajax_select_plugin.generateRequest();
+            this.page = 'config';
+            console.log("Plugin selected: " + this.plugin);
+        }
+
+        _toggle_info(e) {
+            var collapseElem = this.shadowRoot.querySelector('#collapse' + e.currentTarget.dataset.index);
+            collapseElem.toggle();
+        }
+
+        _top_level(items) {
+            items.sort();
+            var result = [];
+            if (items !== null) {
+                for (var i = 0; i < items.length; i++) {
+                    var top_level = items[i].substring(0, items[i].indexOf("."));
+                    if (result[result.length - 1] != top_level) {
+                        result.push(top_level);
+                    }
+                }
+            }
+            return result;
+        }
+    }
+
+    window.customElements.define(VolumetricPlugins.is, VolumetricPlugins);
+  </script>
+</dom-module>
