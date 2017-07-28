@@ -51,7 +51,7 @@
 
         <app-header slot="header" condenses fixed effects="waterfall">
             <app-toolbar>
-                <paper-icon-button src="/resources/images/volatility.svg"></paper-icon-button>
+                <paper-icon-button src="/resources/images/volatility.svg" on-tap="_return_home"></paper-icon-button>
                 <div>Volumetric</div>
                 <div class="edge-fade"></div>
                 <div class="text-capitalize" main-title>[[page]]</div>
@@ -137,6 +137,10 @@
 
         _showPage404() {
             this.page = '404';
+        }
+
+        _return_home() {
+            this.page = 'plugins';
         }
     }
 

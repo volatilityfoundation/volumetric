@@ -1,7 +1,13 @@
 <link rel="import" href="/resources/bower_components/polymer/polymer-element.html">
+<link rel="import" href="/resources/bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="/resources/bower_components/paper-collapse-item/paper-collapse-item.html">
+<link rel="import" href="/resources/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/resources/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/resources/bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="/resources/components/volumetric-requirement.html">
 
 
-<dom-module id="volumetric-plugins">
+<dom-module id="volumetric-config">
     <template>
     <style>
       :host {
@@ -10,6 +16,34 @@
           padding: 10px;
       }
     </style>
+
+        <iron-ajax id="get_requirements" url$="/api/plugins/get_requirements?plugin_name=[[plugin]]"
+                   last-response="{{requirements}}"></iron-ajax>
+        <iron-ajax id="get_automagic_requirements" url="/api/plugins/get_automagic_requirements"
+                   last-response="{{automagic_requirements}}"></iron-ajax>
+        <iron-ajax id="get_automagics" url="/api/plugins/get_automagics" last-response="{{automagics}}"></iron-ajax>
+        <paper-collapse-item header="Available Automagics" opened>
+            <template is="dom-repeat" items="{{automagics}}">
+                <paper-item>
+                    <paper-checkbox checked>{{item}}</paper-checkbox>
+                </paper-item>
+            </template>
+        </paper-collapse-item>
+        <paper-collapse-item header="Automagic Options" opened>
+            <template is="dom-repeat" items="{{automagic_requirements}}">
+                <div>
+                    <paper-input label="{{item.description}} ({{item.name}})"></paper-input>
+                </div>
+            </template>
+        </paper-collapse-item>
+        <paper-collapse-item header="{{plugin}} Options" opened>
+            <template is="dom-repeat" items="{{requirements}}">
+                <div>
+                    <paper-input label="{{item.description}} ({{item.name}})"></paper-input>
+                </div>
+            </template>
+        </paper-collapse-item>
+
     </template>
 
     <script>
@@ -31,6 +65,12 @@
             }
         }
 
+        connectedCallback() {
+            super.connectedCallback();
+            this.$.get_requirements.generateRequest();
+            this.$.get_automagics.generateRequest();
+            this.$.get_automagic_requirements.generateRequest();
+        }
     }
 
     window.customElements.define(VolumetricConfig.is, VolumetricConfig);

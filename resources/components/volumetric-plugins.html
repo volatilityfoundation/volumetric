@@ -19,7 +19,6 @@
     </style>
 
         <iron-ajax url="/api/plugins/list" last-response="{{items}}" auto></iron-ajax>
-        <iron-ajax id="ajax_select_plugin" url$="/api/plugins/select?plugin={{plugin}}"></iron-ajax>
 
         <template is="dom-repeat" items="[[_top_level(items)]]">
             <paper-collapse-item header="[[item]]">
@@ -68,7 +67,6 @@
 
         _select_plugin(e) {
             this.plugin = e.target.value;
-            this.$.ajax_select_plugin.generateRequest();
             this.page = 'config';
             console.log("Plugin selected: " + this.plugin);
         }

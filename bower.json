@@ -30,6 +30,7 @@
     "paper-dropdown-menu": "^2.0.0",
     "iron-ajax": "^2.0.2",
     "paper-item": "^2.0.0",
-    "paper-collapse-item": "^2.0.2"
+    "paper-collapse-item": "^2.0.2",
+    "paper-checkbox": "^2.0.1"
   }
 }
