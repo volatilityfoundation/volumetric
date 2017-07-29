@@ -61,13 +61,14 @@
         </app-header>
 
         <iron-pages
+                id="pages"
                 selected="[[page]]"
                 attr-for-selected="name"
                 fallback-selection="404"
                 role="main">
             <volumetric-plugins name="plugins" page="{{page}}" plugin="{{plugin}}"></volumetric-plugins>
-            <volumetric-config name="config" plugin="{{plugin}}"></volumetric-config>
-            <volumetric-results name="results"></volumetric-results>
+            <volumetric-config name="config" page="{{page}}" plugin="{{plugin}}"></volumetric-config>
+            <volumetric-results name="results" page="{{page}}"></volumetric-results>
             <volumetric-404 name="404"></volumetric-404>
         </iron-pages>
     </template>

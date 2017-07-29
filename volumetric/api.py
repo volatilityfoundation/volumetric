@@ -59,8 +59,7 @@ class PluginsApi(object):
         for amagic in automagics:
             if amagic in seen_automagics:
                 continue
-            seen_automagics.add(amagic)
-        return seen_automagics
+            yield amagic
 
     @cherrypy.expose
     def get_automagics(self):

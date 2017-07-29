@@ -4,7 +4,6 @@
 <link rel="import" href="/resources/bower_components/paper-input/paper-input.html">
 <link rel="import" href="/resources/bower_components/paper-item/paper-item.html">
 <link rel="import" href="/resources/bower_components/paper-checkbox/paper-checkbox.html">
-<link rel="import" href="/resources/components/volumetric-requirement.html">
 
 
 <dom-module id="volumetric-config">
@@ -56,6 +55,7 @@
             return {
                 'page': {
                     type: String,
+                    observer: '_refresh',
                     notify: true
                 },
                 'plugin': {
@@ -65,11 +65,10 @@
             }
         }
 
-        connectedCallback() {
-            super.connectedCallback();
-            this.$.get_requirements.generateRequest();
-            this.$.get_automagics.generateRequest();
-            this.$.get_automagic_requirements.generateRequest();
+        _refresh() {
+            this.$.getRequirements.generateRequest();
+            this.$.getAutomagics.generateRequest();
+            this.$.getAutomagicRequirements.generateRequest();
         }
     }
 
