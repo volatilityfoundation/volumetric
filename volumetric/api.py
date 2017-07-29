@@ -67,8 +67,12 @@ class PluginsApi(object):
         amagics = self._get_automagics()
         result = []
         for amagic in amagics:
-            result.append(amagic.__class__.__name__)
-        return json.dumps(sorted(result))
+            amagic_item = {'name': amagic.__class__.__name__,
+                           'full_name': amagic.__class__.__module__ + "." + amagic.__class__.__name__,
+                           'description': amagic.__doc__[:amagic.__doc__.find("\n")],
+                           'priority': amagic.priority}
+            result.append(amagic_item)
+        return json.dumps(result)
 
     @cherrypy.expose
     def get_automagic_requirements(self):

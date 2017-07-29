@@ -16,20 +16,20 @@
       }
     </style>
 
-        <iron-ajax id="get_requirements" url$="/api/plugins/get_requirements?plugin_name=[[plugin]]"
+        <iron-ajax id="getRequirements" url$="/api/plugins/get_requirements?plugin_name=[[plugin]]"
                    last-response="{{requirements}}"></iron-ajax>
-        <iron-ajax id="get_automagic_requirements" url="/api/plugins/get_automagic_requirements"
-                   last-response="{{automagic_requirements}}"></iron-ajax>
-        <iron-ajax id="get_automagics" url="/api/plugins/get_automagics" last-response="{{automagics}}"></iron-ajax>
+        <iron-ajax id="getAutomagicRequirements" url="/api/plugins/get_automagic_requirements"
+                   last-response="{{automagicRequirements}}"></iron-ajax>
+        <iron-ajax id="getAutomagics" url="/api/plugins/get_automagics" last-response="{{automagics}}"></iron-ajax>
         <paper-collapse-item header="Available Automagics" opened>
             <template is="dom-repeat" items="{{automagics}}">
                 <paper-item>
-                    <paper-checkbox checked>{{item}}</paper-checkbox>
+                    <paper-checkbox checked>({{item.priority}}) {{item.name}} - {{item.description}}</paper-checkbox>
                 </paper-item>
             </template>
         </paper-collapse-item>
         <paper-collapse-item header="Automagic Options" opened>
-            <template is="dom-repeat" items="{{automagic_requirements}}">
+            <template is="dom-repeat" items="{{automagicRequirements}}">
                 <div>
                     <paper-input label="{{item.description}} ({{item.name}})"></paper-input>
                 </div>
