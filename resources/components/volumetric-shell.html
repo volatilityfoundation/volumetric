@@ -51,7 +51,7 @@
 
         <app-header slot="header" condenses fixed effects="waterfall">
             <app-toolbar>
-                <paper-icon-button src="/resources/images/volatility.svg" on-tap="_return_home"></paper-icon-button>
+                <paper-icon-button src="/resources/images/volatility.svg" on-tap="_returnHome"></paper-icon-button>
                 <div>Volumetric</div>
                 <div class="edge-fade"></div>
                 <div class="text-capitalize" main-title>[[page]]</div>
@@ -67,7 +67,7 @@
                 fallback-selection="404"
                 role="main">
             <volumetric-plugins name="plugins" page="{{page}}" plugin="{{plugin}}"></volumetric-plugins>
-            <volumetric-config name="config" page="{{page}}" plugin="{{plugin}}"></volumetric-config>
+            <volumetric-config name="config" page="{{page}}" plugin="{{plugin}}" job-id="{{jobId}}"></volumetric-config>
             <volumetric-results name="results" page="{{page}}"></volumetric-results>
             <volumetric-404 name="404"></volumetric-404>
         </iron-pages>
@@ -103,6 +103,7 @@
         static get observers() {
             return [
                 '_routePageChanged(routeData.page)',
+                '_launchJob(jobId)'
             ];
         }
 
@@ -140,8 +141,28 @@
             this.page = '404';
         }
 
-        _return_home() {
+        _returnHome() {
             this.page = 'plugins';
+        }
+
+        _launchJob() {
+            let eventSource = new EventSource('/api/plugins/run_job?job_id=' + this.jobId);
+            eventSource.addEventListener('progress', (e) => {
+                data = JSON.parse(e.data);
+                this.progress = data['value'];
+            });
+            eventSource.addEventListener('error', (e) => {
+                console.log("Error in job");
+                e.target.close();
+            });
+            eventSource.addEventListener('partial-output', (e) => {
+                console.log("Partial output");
+            });
+            eventSource.addEventListener('complete-output', (e) => {
+                console.log("Complete output");
+                e.target.close();
+            });
+
         }
     }
 

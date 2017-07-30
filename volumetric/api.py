@@ -1,5 +1,7 @@
 import hashlib
 import json
+import logging
+import multiprocessing
 
 import cherrypy
 
@@ -7,6 +9,18 @@ import volatility
 from volatility import framework, plugins
 from volatility.framework import constants, interfaces, contexts, automagic
 from volatility.framework.interfaces import configuration
+from volatility.framework.interfaces.configuration import HierarchicalDict
+
+vollog = logging.getLogger('volatility')
+vollog.setLevel(0)
+
+file_logger = logging.FileHandler('logs.txt')
+file_logger.setLevel(0)
+file_formatter = logging.Formatter(datefmt = '%y-%m-%d %H:%M:%S',
+                                   fmt = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+file_logger.setFormatter(file_formatter)
+vollog.addHandler(file_logger)
+vollog.info("Logging started")
 
 framework.require_interface_version(0, 0, 0)
 
@@ -18,7 +32,8 @@ class Api(object):
 
 
 class AutomagicApi(object):
-    def _get_automagics(self):
+    @classmethod
+    def get_automagics(cls):
         """Returns an automagic list of all the automagic objects"""
         seen_automagics = set()
         ctx = cherrypy.session.get('context', contexts.Context())
@@ -32,7 +47,7 @@ class AutomagicApi(object):
     @cherrypy.expose
     def list(self):
         """Returns an automagic list of all the automagic objects"""
-        amagics = self._get_automagics()
+        amagics = self.get_automagics()
         result = []
         for amagic in amagics:
             amagic_name = amagic.__class__.__name__
@@ -47,10 +62,10 @@ class AutomagicApi(object):
     def get_requirements(self):
         """Returns the requirements for each automagic"""
         result = []
-        for amagic in self._get_automagics():
+        for amagic in self.get_automagics():
             for req in amagic.get_requirements():
                 if isinstance(req, configuration.InstanceRequirement):
-                    automagic_config_path = interfaces.configuration.path_join('automagics', amagic.__class__.__name__)
+                    automagic_config_path = interfaces.configuration.path_join('automagic', amagic.__class__.__name__)
                     reqment = {'name': automagic_config_path + '.' + req.name,
                                'description': req.description,
                                'default': req.default,
@@ -62,20 +77,24 @@ class AutomagicApi(object):
 
 
 class PluginsApi(object):
-    def get_plugins(self):
+    @classmethod
+    def get_plugins(cls):
+        volatility.plugins.__path__ = cherrypy.session.get('plugin_dir', '').split(";") + constants.PLUGINS_PATH
+        volatility.framework.import_files(volatility.plugins)  # Will not log as console's default level is WARNING
+        if cherrypy.session.get('plugins', None):
+            return cherrypy.session.get('plugins', None)
         plugin_list = {}
         for plugin in volatility.framework.class_subclasses(interfaces.plugins.PluginInterface):
             plugin_name = plugin.__module__ + "." + plugin.__name__
             if plugin_name.startswith("volatility.plugins."):
                 plugin_name = plugin_name[len("volatility.plugins."):]
             plugin_list[plugin_name] = plugin
+        cherrypy.session['plugins'] = plugin_list
         return plugin_list
 
     @cherrypy.expose
     def list(self):
         """List the available plugins"""
-        volatility.plugins.__path__ = cherrypy.session.get('plugin_dir', '').split(";") + constants.PLUGINS_PATH
-        volatility.framework.import_files(volatility.plugins)  # Will not log as console's default level is WARNING
         plugin_list = self.get_plugins()
 
         return json.dumps([name for name in plugin_list])
@@ -109,3 +128,98 @@ class PluginsApi(object):
         jobs[hash] = job
         cherrypy.session['jobs'] = jobs
         return json.dumps(hash)
+
+    @cherrypy.expose
+    def run_job(self, job_id):
+        """Runs a plugin, providing progress reports and storing the results"""
+        cherrypy.response.headers["Content-Type"] = "text/event-stream;charset=utf-8"
+
+        def generator():
+            def respond(item):
+                print("RESPONSE:", repr(item))
+                return "retry: 1000\nevent: {}\ndata: {}\n\n".format(item['type'], json.dumps(item['data']))
+
+            jobs = cherrypy.session.get('jobs', {})
+            if job_id not in jobs:
+                yield respond({'type': 'error',
+                               'data': {'message': 'Failed to locate prepared job'}})
+                raise StopIteration
+            job = jobs[job_id]
+
+            ctx = cherrypy.session.get('context', contexts.Context())
+
+            plugins = self.get_plugins()
+            if job['plugin'] not in plugins:
+                yield respond({'type': 'error',
+                               'data': {'message': 'Invalid plugin selected'}})
+                raise StopIteration
+            plugin = plugins[job['plugin']]
+            plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
+
+            automagics = []
+            for amagic in AutomagicApi.get_automagics():
+                if amagic.__class__.__name__ in job['automagics']:
+                    automagics.append(amagic)
+
+            ctx.config = HierarchicalDict(job['global_config'])
+            ctx.config.splice(plugin_config_path, HierarchicalDict(job['plugin_config']))
+
+            progress_queue = multiprocessing.Manager().Queue()
+            automagic_task = run_pool.apply_async(func = self.run_automagics,
+                                                  args = (automagics, ctx, plugin, plugin_config_path, progress_queue))
+
+            while not automagic_task.ready():
+                try:
+                    print("Automagic Wait", automagic_task.ready())
+                    automagic_task.wait(0.1)
+                    print("Checking Progress Queue", automagic_task.ready())
+                    # task = progress_queue.get(1)
+                    print("Yield")
+                except TimeoutError:
+                    pass
+
+            yield (respond({'type': 'complete-output',
+                            'data': {'result': 'SOMETHING'}}))
+
+            print("Finished Progress queue")
+            raise StopIteration
+
+        return generator()
+
+    run_job._cp_config = {'response.stream': True, 'tools.encode.encoding': 'utf-8'}
+
+    def run_automagics(self, automagics, ctx, plugin, plugin_config_path, progress_queue):
+        print("CTX", dict(ctx.config))
+        print("Automagics", automagics)
+        print("Plugin", plugin)
+
+        def progress_callback(value, message):
+            progress_queue.put({'type': 'progress',
+                                'data': {'value': value,
+                                         'message': message}
+                                })
+
+        try:
+            automagic.run(automagics, ctx, plugin, "plugins", progress_callback = progress_callback)
+        except Exception as e:
+            progress_queue.put(
+                {'type': 'error', 'data': {'message': 'Running automagic failed: {}'.format(repr(e))}})
+
+        unsatisfied = plugin.unsatisfied(ctx, plugin_config_path)
+        if unsatisfied:
+            progress_queue.put({'type': 'error',
+                                'data': {'message': 'Plugin requirements not satisfied'}})
+            return None
+
+        constructed = plugin(ctx, plugin_config_path)
+        result = constructed.run()
+        return result
+
+
+def stop_pool():
+    run_pool.terminate()
+
+
+# Must be defined last, so that all the pickling works
+cherrypy.engine.subscribe('stop', stop_pool)
+run_pool = multiprocessing.Pool()

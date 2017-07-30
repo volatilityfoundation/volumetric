@@ -32,14 +32,15 @@ class VolumetricServer(object):
 
     def run(self):
         configuration = {'server.socket_port': self.port,
-                         'server.thread_pool': self.thread_pool_size}
+                         'server.thread_pool': self.thread_pool_size,
+                         'tools.sessions.locking': 'explicit',
+                         'tools.sessions.on': True}
         if not self.debug:
             configuration.update({'environment': 'production'})
 
         cherrypy.config.update(configuration)
 
-        site_config = {'/': {'tools.gzip.on': True,
-                             'tools.sessions.on': True},
+        site_config = {'/': {},
                        '/resources': {'tools.staticdir.on': True,
                                       'tools.staticdir.dir': os.path.join(
                                           os.path.dirname(os.path.dirname(__file__)), 'resources')}}
