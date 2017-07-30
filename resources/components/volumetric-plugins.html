@@ -56,8 +56,8 @@
         }
 
         _filtered(items, item) {
-            var result = [];
-            for (var i = 0; i < items.length; i++) {
+            let result = [];
+            for (let i = 0; i < items.length; i++) {
                 if (items[i].substring(0, item.length) === item) {
                     result.push(items[i]);
                 }
@@ -72,16 +72,16 @@
         }
 
         _toggle_info(e) {
-            var collapseElem = this.shadowRoot.querySelector('#collapse' + e.currentTarget.dataset.index);
+            let collapseElem = this.shadowRoot.querySelector('#collapse' + e.currentTarget.dataset.index);
             collapseElem.toggle();
         }
 
         _top_level(items) {
             items.sort();
-            var result = [];
+            let result = [];
             if (items !== null) {
-                for (var i = 0; i < items.length; i++) {
-                    var top_level = items[i].substring(0, items[i].indexOf("."));
+                for (let i = 0; i < items.length; i++) {
+                    let top_level = items[i].substring(0, items[i].indexOf("."));
                     if (result[result.length - 1] != top_level) {
                         result.push(top_level);
                     }

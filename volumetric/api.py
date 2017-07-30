@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import cherrypy
@@ -13,6 +14,51 @@ framework.require_interface_version(0, 0, 0)
 class Api(object):
     def __init__(self):
         self.plugins = PluginsApi()
+        self.automagics = AutomagicApi()
+
+
+class AutomagicApi(object):
+    def _get_automagics(self):
+        """Returns an automagic list of all the automagic objects"""
+        seen_automagics = set()
+        ctx = cherrypy.session.get('context', contexts.Context())
+        cherrypy.session['context'] = ctx
+        automagics = automagic.available(ctx)
+        for amagic in automagics:
+            if amagic in seen_automagics:
+                continue
+            yield amagic
+
+    @cherrypy.expose
+    def list(self):
+        """Returns an automagic list of all the automagic objects"""
+        amagics = self._get_automagics()
+        result = []
+        for amagic in amagics:
+            amagic_name = amagic.__class__.__name__
+            amagic_item = {'name': amagic_name,
+                           'full_name': amagic.__class__.__module__ + "." + amagic_name,
+                           'description': amagic.__doc__[:amagic.__doc__.find("\n")],
+                           'priority': amagic.priority}
+            result.append(amagic_item)
+        return json.dumps(result)
+
+    @cherrypy.expose
+    def get_requirements(self):
+        """Returns the requirements for each automagic"""
+        result = []
+        for amagic in self._get_automagics():
+            for req in amagic.get_requirements():
+                if isinstance(req, configuration.InstanceRequirement):
+                    automagic_config_path = interfaces.configuration.path_join('automagics', amagic.__class__.__name__)
+                    reqment = {'name': automagic_config_path + '.' + req.name,
+                               'description': req.description,
+                               'default': req.default,
+                               'type': req.__class__.__name__,
+                               'optional': req.optional,
+                               'automagic': amagic.__class__.__name__}
+                    result.append(reqment)
+        return json.dumps(result)
 
 
 class PluginsApi(object):
@@ -46,46 +92,20 @@ class PluginsApi(object):
                 reqment = {'name': plugin_config_path + '.' + req.name,
                            'description': req.description,
                            'default': req.default,
+                           'optional': req.optional,
                            'type': req.__class__.__name__}
                 reqs.append(reqment)
         return json.dumps(reqs)
 
-    def _get_automagics(self):
-        """Returns an automagic list of all the automagic objects"""
-        seen_automagics = set()
-        configurables_list = {}
-        ctx = cherrypy.session.get('context', contexts.Context())
-        automagics = automagic.available(ctx)
-        for amagic in automagics:
-            if amagic in seen_automagics:
-                continue
-            yield amagic
-
     @cherrypy.expose
-    def get_automagics(self):
-        """Returns an automagic list of all the automagic objects"""
-        amagics = self._get_automagics()
-        result = []
-        for amagic in amagics:
-            amagic_item = {'name': amagic.__class__.__name__,
-                           'full_name': amagic.__class__.__module__ + "." + amagic.__class__.__name__,
-                           'description': amagic.__doc__[:amagic.__doc__.find("\n")],
-                           'priority': amagic.priority}
-            result.append(amagic_item)
-        return json.dumps(result)
-
-    @cherrypy.expose
-    def get_automagic_requirements(self):
-        """Returns the requirements for each automagic"""
-        result = []
-        for amagic in self._get_automagics():
-            for req in amagic.get_requirements():
-                if isinstance(req, configuration.InstanceRequirement):
-                    automagic_config_path = interfaces.configuration.path_join('automagics', amagic.__class__.__name__)
-                    reqment = {'name': automagic_config_path + '.' + req.name,
-                               'description': req.description,
-                               'default': req.default,
-                               'type': req.__class__.__name__,
-                               'automagic': amagic.__class__.__name__}
-                    result.append(reqment)
-        return json.dumps(result)
+    def create_job(self, plugin, automagics, global_config, plugin_config):
+        """Stores the details locally"""
+        job = {'plugin': plugin,
+               'automagics': json.loads(automagics),
+               'global_config': json.loads(global_config),
+               'plugin_config': json.loads(plugin_config)}
+        hash = hashlib.sha1(bytes(json.dumps(job), 'latin-1')).hexdigest()
+        jobs = cherrypy.session.get('jobs', {})
+        jobs[hash] = job
+        cherrypy.session['jobs'] = jobs
+        return json.dumps(hash)

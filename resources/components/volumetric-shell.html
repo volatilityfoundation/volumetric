@@ -128,7 +128,7 @@
 
         _pageChanged(page) {
             // Load page import on demand. Show 404 page if fails
-            var resolvedPageUrl = this.resolveUrl('volumetric-' + page + '.html');
+            let resolvedPageUrl = this.resolveUrl('volumetric-' + page + '.html');
             Polymer.importHref(
                 resolvedPageUrl,
                 null,
