@@ -86,7 +86,7 @@
                                             <paper-icon-button icon="file-upload">Upload</paper-icon-button>
                                         </label>
                                     </div>
-                                    <paper-textarea id="configArea" value="{{_jsonifyConfig(customConfig.*)}}"
+                                    <paper-textarea id="configArea" value="{{_jsonifyConfig(pluginConfig.*)}}"
                                                     label="JSON config" always-float-label></paper-textarea>
                                 </paper-item-body>
                             </paper-item>
@@ -121,7 +121,7 @@
                     type: String,
                     notify: true
                 },
-                'customConfig': {
+                "pluginConfig": {
                     type: Object,
                     notify: true,
                     value: (() => {
@@ -189,15 +189,15 @@
         }
 
         _jsonifyConfig(changed) {
-            return JSON.stringify(this.customConfig, null, 2);
+            return JSON.stringify(this.pluginConfig, null, 2);
         }
 
         _fileUploaded() {
             let filename = this.$.fileInput.files[0];
             let reader = new FileReader();
-            let customConfig = this.customConfig;
+            let customConfig = this.pluginConfig;
             reader.onload = () => {
-                this.customConfig = JSON.parse(reader.result);
+                this.pluginConfig = JSON.parse(reader.result);
             };
             reader.readAsText(filename);
         }
@@ -208,8 +208,8 @@
             for (let key in form_elements) {
                 if (key.substring(0, 11) == 'vol_plugins') {
                     let index = key.substring(key.lastIndexOf('.') + 1, key.length);
-                    this.customConfig[index] = this._changeType(index, form_elements[key]);
-                } else if (key.substring(0, 14) == 'vol_automagics') {
+                    this.pluginConfig[index] = this._changeType(index, form_elements[key]);
+                } else if (key.substring(0, 13) == 'vol_automagic') {
                     let index = key.substring(4, key.length);
                     this.automagicConfig[index] = this._changeType(index, form_elements[key]);
                 } else if (key.substring(0, 10) == 'automagic_') {
@@ -225,10 +225,12 @@
                 'plugin': this.plugin,
                 'automagics': JSON.stringify(automagicEnabled),
                 'global_config': JSON.stringify(this.automagicConfig),
-                'plugin_config': JSON.stringify(this.customConfig)
+                'plugin_config': JSON.stringify(this.pluginConfig)
             };
             this.$.prepareJob.generateRequest();
+            this.page = 'results';
         }
+
     }
 
     window.customElements.define(VolumetricConfig.is, VolumetricConfig);
