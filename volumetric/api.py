@@ -1,7 +1,7 @@
 import hashlib
 import json
 import logging
-import multiprocessing
+import queue
 
 import cherrypy
 
@@ -10,6 +10,7 @@ from volatility import framework, plugins
 from volatility.framework import constants, interfaces, contexts, automagic
 from volatility.framework.interfaces import configuration
 from volatility.framework.interfaces.configuration import HierarchicalDict
+from volumetric.backqueue import BackgroundTaskQueue
 
 vollog = logging.getLogger('volatility')
 vollog.setLevel(0)
@@ -136,7 +137,7 @@ class PluginsApi(object):
 
         def generator():
             def respond(item):
-                print("RESPONSE:", repr(item))
+                print("RESPONSE", item)
                 return "retry: 1000\nevent: {}\ndata: {}\n\n".format(item['type'], json.dumps(item['data']))
 
             jobs = cherrypy.session.get('jobs', {})
@@ -164,62 +165,63 @@ class PluginsApi(object):
             ctx.config = HierarchicalDict(job['global_config'])
             ctx.config.splice(plugin_config_path, HierarchicalDict(job['plugin_config']))
 
-            progress_queue = multiprocessing.Manager().Queue()
-            automagic_task = run_pool.apply_async(func = self.run_automagics,
-                                                  args = (automagics, ctx, plugin, plugin_config_path, progress_queue))
+            threadrunner.put(run_automagics, automagics, ctx, plugin, plugin_config_path, progress_queue)
 
-            while not automagic_task.ready():
+            finished = False
+            result = None
+            while not finished:
                 try:
-                    print("Automagic Wait", automagic_task.ready())
-                    automagic_task.wait(0.1)
-                    print("Checking Progress Queue", automagic_task.ready())
-                    # task = progress_queue.get(1)
-                    print("Yield")
+                    progress = progress_queue.get(0.1)
+                    if progress:
+                        yield respond(progress)
+                    if (progress['type'] == 'finished' or progress['type'] == 'error'):
+                        if progress['type'] == 'finished':
+                            result = progress['result']
+                            break
                 except TimeoutError:
                     pass
 
+            job['result'] = result
             yield (respond({'type': 'complete-output',
-                            'data': {'result': 'SOMETHING'}}))
-
-            print("Finished Progress queue")
-            raise StopIteration
+                            'data': {}}))
 
         return generator()
 
     run_job._cp_config = {'response.stream': True, 'tools.encode.encoding': 'utf-8'}
 
-    def run_automagics(self, automagics, ctx, plugin, plugin_config_path, progress_queue):
-        print("CTX", dict(ctx.config))
-        print("Automagics", automagics)
-        print("Plugin", plugin)
 
-        def progress_callback(value, message):
-            progress_queue.put({'type': 'progress',
-                                'data': {'value': value,
-                                         'message': message}
-                                })
+def run_automagics(automagics, ctx, plugin, plugin_config_path, progress_queue):
+    def progress_callback(value, message = None):
+        progress_queue.put({'type': 'progress',
+                            'data': {'value': value,
+                                     'message': message}
+                            })
 
-        try:
-            automagic.run(automagics, ctx, plugin, "plugins", progress_callback = progress_callback)
-        except Exception as e:
-            progress_queue.put(
-                {'type': 'error', 'data': {'message': 'Running automagic failed: {}'.format(repr(e))}})
+    # Disable multi-processing using multiple multi-processes doesn't have any issues
+    volatility.framework.constants.DISABLE_MULTITHREADED_SCANNING = True
 
-        unsatisfied = plugin.unsatisfied(ctx, plugin_config_path)
-        if unsatisfied:
-            progress_queue.put({'type': 'error',
-                                'data': {'message': 'Plugin requirements not satisfied'}})
-            return None
+    try:
+        automagic.run(automagics, ctx, plugin, "plugins", progress_callback = progress_callback)
+    except Exception as e:
+        progress_queue.put({'type': 'warning',
+                            'data': {'message': 'Running automagic failed: {}'.format(repr(e))}})
 
-        constructed = plugin(ctx, plugin_config_path)
-        result = constructed.run()
-        return result
+    unsatisfied = plugin.unsatisfied(ctx, plugin_config_path)
+    if unsatisfied:
+        progress_queue.put({'type': 'error',
+                            'data': {'message': 'Plugin requirements not satisfied'}})
+        return None
+
+    constructed = plugin(ctx, plugin_config_path)
+    result = constructed.run()
+    for row in result.populate():
+        progress_queue.put({'type': 'partial-output',
+                            'data': {'row': row}})
+    progress_queue.put({'type': 'finished',
+                        'data': {'message': 'Complete'},
+                        'result': result})
 
 
-def stop_pool():
-    run_pool.terminate()
-
-
-# Must be defined last, so that all the pickling works
-cherrypy.engine.subscribe('stop', stop_pool)
-run_pool = multiprocessing.Pool()
+threadrunner = BackgroundTaskQueue(cherrypy.engine)
+threadrunner.subscribe()
+progress_queue = queue.Queue()

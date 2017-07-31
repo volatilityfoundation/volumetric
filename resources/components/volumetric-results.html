@@ -1,0 +1,26 @@
+<link rel="import" href="/resources/bower_components/polymer/polymer-element.html">
+
+<dom-module id="volumetric-results">
+    <template>
+    <style>
+      :host {
+          display: block;
+
+          padding: 10px;
+      }
+    </style>
+
+        Results page
+
+    </template>
+
+    <script>
+    class VolumetricResults extends Polymer.Element {
+        static get is() {
+            return 'volumetric-results';
+        }
+    }
+
+    window.customElements.define(VolumetricResults.is, VolumetricResults);
+    </script>
+</dom-module>

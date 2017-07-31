@@ -146,19 +146,23 @@
         }
 
         _launchJob() {
-            let eventSource = new EventSource('/api/plugins/run_job?job_id=' + this.jobId);
-            eventSource.addEventListener('progress', (e) => {
-                data = JSON.parse(e.data);
+            this.eventSource = new EventSource('/api/plugins/run_job?job_id=' + this.jobId);
+            this.eventSource.addEventListener('progress', (e) => {
+                let data = JSON.parse(e.data);
                 this.progress = data['value'];
             });
-            eventSource.addEventListener('error', (e) => {
+            this.eventSource.addEventListener('error', (e) => {
                 console.log("Error in job");
                 e.target.close();
             });
-            eventSource.addEventListener('partial-output', (e) => {
+            this.eventSource.addEventListener('warning', (e) => {
+                console.log("Error in job");
+                e.target.close();
+            });
+            this.eventSource.addEventListener('partial-output', (e) => {
                 console.log("Partial output");
             });
-            eventSource.addEventListener('complete-output', (e) => {
+            this.eventSource.addEventListener('complete-output', (e) => {
                 console.log("Complete output");
                 e.target.close();
             });
