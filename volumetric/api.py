@@ -258,9 +258,9 @@ class ResultsApi(object):
         if page_size is not None:
             page_size = json.loads(page_size)
         if sort_property is not None:
-            sort_property = json.loads(page_size)
+            sort_property = sort_property
         if sort_direction is not None:
-            sort_direction = json.loads(sort_direction)
+            sort_direction = (sort_direction.lower() == 'asc')
         jobs = cherrypy.session.get('jobs', {})
         if (job_id not in jobs):
             return []
@@ -279,16 +279,18 @@ class ResultsApi(object):
             accumulator.append(item_dict)
             return accumulator
 
+        print("Sorting by", repr(sort_key), sort_property, sort_direction)
         return list(result.visit(None, visitor, initial_accumulator = [], sort_key = sort_key)[index:index + page_size])
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def columns(self, job_id):
+    def metadata(self, job_id):
         jobs = cherrypy.session.get('jobs', {})
         if (job_id not in jobs):
             return []
         job = jobs[job_id]
         if not job['result']:
             return []
-        return [{'index': column.index, 'name': column.name, 'type': column.type.__name__} for column in
-                job['result'].columns]
+        return {'size': job['result'].row_count,
+                'columns': [{'index': column.index, 'name': column.name, 'type': column.type.__name__} for column in
+                            job['result'].columns]}

@@ -2,6 +2,7 @@
 <link rel="import" href="/resources/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="/resources/bower_components/paper-card/paper-card.html">
 <link rel="import" href="/resources/bower_components/vaadin-grid/vaadin-grid.html">
+<link rel="import" href="/resources/bower_components/vaadin-grid/vaadin-grid-sorter.html">
 
 <dom-module id="volumetric-results">
     <template>
@@ -17,15 +18,17 @@
       }
     </style>
 
-        <iron-ajax id="getResultColumns" url="/api/results/columns" last-response="{{columns}}"></iron-ajax>
+        <iron-ajax id="getResultMetadata" url="/api/results/metadata" last-response="{{metadata}}"></iron-ajax>
         <iron-ajax id="getResultPage" url="/api/results/get?job_id=[[jobId]]"></iron-ajax>
 
-        <paper-card id="displayCard" heading="Partial Results">
+        <paper-card id="displayCard" heading="Processing...">
             <vaadin-grid id="grid">
-                <template is="dom-repeat" items="{{columns}}" as="column">
+                <template is="dom-repeat" items="[[getColumns(metadata)]]" as="column">
                     <vaadin-grid-column>
-                        <template class="header">[[column.name]]</template>
-                        <template>[[get(column.name,item)]]</template>
+                        <template class="header">
+                            <vaadin-grid-sorter path="[[column]]">[[column]]</vaadin-grid-sorter>
+                        </template>
+                        <template>[[getItem(column,item)]]</template>
                     </vaadin-grid-column>
                 </template>
             </vaadin-grid>
@@ -54,16 +57,25 @@
         }
 
         _refresh() {
-            this.$.displayCard.heading = "Partial Results";
+            this.$.displayCard.heading = "Processing...";
+        }
+
+        getColumns(metadata) {
+            let result = [];
+            for (let index = 0; index < this.metadata.columns.length; index++) {
+                result.push(this.metadata.columns[index].name);
+            }
+            return result;
         }
 
         buildGrid() {
             let getResultPage = this.$.getResultPage;
-            let getResultColumns = this.$.getResultColumns;
+            let getResultMetadata = this.$.getResultMetadata;
             let grid = this.$.grid;
+            let displayCard = this.$.displayCard;
 
-            getResultColumns.params = {'job_id': this.jobId};
-            getResultColumns.addEventListener('response', function() {
+            getResultMetadata.params = {'job_id': this.jobId};
+            getResultMetadata.addEventListener('response', function() {
                 getResultPage.generateRequest();
             }, {once: true});
 
@@ -75,9 +87,10 @@
                     } else {
                         callback([]);
                     }
+                    displayCard.heading = "Results";
                 }, {once: true});
 
-                if (grid.sortOrder === undefined || grid.sortOrder.length < 1) {
+                if (params.sortOrders === undefined || params.sortOrders.length < 1) {
                     getResultPage.params = {
                         'index': params.page,
                         'page_size': params.pageSize
@@ -86,17 +99,23 @@
                     getResultPage.params = {
                         'index': params.page,
                         'page_size': params.pageSize,
-                        'sort_property': grid.columns[grid.sortOrder[0].column].name,
-                        'sort_direction': grid.sortOrder[0].direction
+                        'sort_property': params.sortOrders[0].path,
+                        'sort_direction': params.sortOrders[0].direction
                     };
                 }
-                if (getResultColumns.lastResponse) {
+                if (getResultMetadata.lastResponse) {
                     getResultPage.generateRequest();
                 }
             };
 
+            getResultMetadata.generateRequest();
+        }
 
-            getResultColumns.generateRequest();
+        getItem(column, item) {
+            if (column !== undefined && item !== undefined && item !== null) {
+                return item[column.toLowerCase()];
+            }
+            return null;
         }
     }
 
