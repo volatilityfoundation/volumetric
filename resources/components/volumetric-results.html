@@ -75,15 +75,15 @@
                 getResultPage.generateRequest();
             }, {once: true});
 
-            grid.size = 20;
+            grid.size = 0;
             grid.dataProvider = function(params, callback) {
                 getResultPage.addEventListener('response', function() {
-                    if (getResultPage.lastResponse != undefined) {
+                    if (getResultPage.lastResponse != undefined && getResultPage.lastResponse != null) {
+                        displayCard.heading = "Results";
                         callback(getResultPage.lastResponse);
                     } else {
                         callback([]);
                     }
-                    displayCard.heading = "Results";
                 }, {once: true});
 
                 if (params.sortOrders === undefined || params.sortOrders.length < 1) {

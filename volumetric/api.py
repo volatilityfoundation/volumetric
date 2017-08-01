@@ -262,10 +262,10 @@ class ResultsApi(object):
             sort_direction = (sort_direction.lower() == 'asc')
         jobs = cherrypy.session.get('jobs', {})
         if (job_id not in jobs):
-            return []
+            return None
         job = jobs[job_id]
         if not job.get('result', None):
-            return []
+            return None
 
         result = job['result']
         sort_key = None
@@ -285,10 +285,10 @@ class ResultsApi(object):
     def metadata(self, job_id):
         jobs = cherrypy.session.get('jobs', {})
         if (job_id not in jobs):
-            return []
+            return None
         job = jobs[job_id]
         if not job['result']:
-            return []
+            return None
         return {'size': job['result'].row_count,
                 'columns': [{'index': column.index, 'name': column.name, 'type': column.type.__name__} for column in
                             job['result'].columns]}

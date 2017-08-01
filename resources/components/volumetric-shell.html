@@ -106,7 +106,8 @@
                 subroute: String,
                 progress: {
                     value: 0,
-                    type: Number
+                    type: Number,
+                    notify: true
                 },
             };
         }
@@ -163,9 +164,9 @@
 
         _launchJob() {
             if (this.$.resultsPage.$ !== undefined) {
-                this.$.progressBar.value = 0;
+                this.progress = 0;
                 this.$.resultsPage.metadata = {'columns': {}, 'size': 20};
-                set(this.$.resultsPage.$.displayCard.heading, "Processing...");
+                this.$.resultsPage.$.displayCard.heading = "Processing...";
                 this.$.resultsPage.$.grid.clearCache();
             }
 
@@ -196,7 +197,7 @@
             this.eventSource.addEventListener('complete-output', (e) => {
                 console.log("Complete output");
                 e.target.close();
-                this.$.progressBar.value = 100;
+                this.progress = 100;
                 this.$.resultsPage.buildGrid();
             });
         }
