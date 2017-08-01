@@ -46,7 +46,6 @@
             return {
                 'page': {
                     type: String,
-                    observer: '_refresh',
                     notify: true
                 },
                 'jobId': {
@@ -54,10 +53,6 @@
                     notify: true
                 },
             }
-        }
-
-        _refresh() {
-            this.$.displayCard.heading = "Processing...";
         }
 
         getColumns(metadata) {
@@ -76,6 +71,7 @@
 
             getResultMetadata.params = {'job_id': this.jobId};
             getResultMetadata.addEventListener('response', function() {
+                grid.size = getResultMetadata.lastResponse.size;
                 getResultPage.generateRequest();
             }, {once: true});
 

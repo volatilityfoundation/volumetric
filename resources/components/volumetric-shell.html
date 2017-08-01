@@ -162,6 +162,13 @@
         }
 
         _launchJob() {
+            if (this.$.resultsPage.$ !== undefined) {
+                this.$.progressBar.value = 0;
+                this.$.resultsPage.metadata = {'columns': {}, 'size': 20};
+                set(this.$.resultsPage.$.displayCard.heading, "Processing...");
+                this.$.resultsPage.$.grid.clearCache();
+            }
+
             this.eventSource = new EventSource('/api/plugins/run_job?job_id=' + this.jobId);
             this.eventSource.addEventListener('progress', (e) => {
                 let data = JSON.parse(e.data);
@@ -189,6 +196,7 @@
             this.eventSource.addEventListener('complete-output', (e) => {
                 console.log("Complete output");
                 e.target.close();
+                this.$.progressBar.value = 100;
                 this.$.resultsPage.buildGrid();
             });
         }

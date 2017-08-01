@@ -132,7 +132,7 @@ class PluginsApi(object):
                'global_config': json.loads(global_config),
                'plugin_config': json.loads(plugin_config),
                'result': None}
-        hash = hashlib.sha1(bytes(json.dumps(job), 'latin-1')).hexdigest()
+        hash = hashlib.sha1(bytes(json.dumps(job, sort_keys = True), 'latin-1')).hexdigest()
         jobs = cherrypy.session.get('jobs', {})
         jobs[hash] = job
         cherrypy.session['jobs'] = jobs
@@ -252,7 +252,6 @@ class ResultsApi(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get(self, job_id, index = None, page_size = None, sort_property = None, sort_direction = None):
-        print(index, page_size, sort_property, sort_direction)
         if index is not None:
             index = json.loads(index)
         if page_size is not None:
@@ -279,7 +278,6 @@ class ResultsApi(object):
             accumulator.append(item_dict)
             return accumulator
 
-        print("Sorting by", repr(sort_key), sort_property, sort_direction)
         return list(result.visit(None, visitor, initial_accumulator = [], sort_key = sort_key)[index:index + page_size])
 
     @cherrypy.expose
