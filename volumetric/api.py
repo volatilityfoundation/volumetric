@@ -10,6 +10,7 @@ from volatility import framework, plugins
 from volatility.framework import constants, interfaces, contexts, automagic
 from volatility.framework.interfaces import configuration
 from volatility.framework.interfaces.configuration import HierarchicalDict
+from volatility.framework.renderers import ColumnSortKey
 from volumetric.backqueue import BackgroundTaskQueue
 
 vollog = logging.getLogger('volatility')
@@ -30,6 +31,7 @@ class Api(object):
     def __init__(self):
         self.plugins = PluginsApi()
         self.automagics = AutomagicApi()
+        self.results = ResultsApi()
 
 
 class AutomagicApi(object):
@@ -152,51 +154,54 @@ class PluginsApi(object):
                                'data': {'message': 'Failed to locate prepared job'}})
                 raise StopIteration
             job = jobs[job_id]
+            if not job['result']:
 
-            ctx = cherrypy.session.get('context', contexts.Context())
+                ctx = cherrypy.session.get('context', contexts.Context())
 
-            plugins = self.get_plugins()
-            if job['plugin'] not in plugins:
-                yield respond({'type': 'error',
-                               'data': {'message': 'Invalid plugin selected'}})
-                raise StopIteration
-            plugin = plugins[job['plugin']]
-            plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
+                plugins = self.get_plugins()
+                if job['plugin'] not in plugins:
+                    yield respond({'type': 'error',
+                                   'data': {'message': 'Invalid plugin selected'}})
+                    raise StopIteration
+                plugin = plugins[job['plugin']]
+                plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
 
-            automagics = []
-            for amagic in AutomagicApi.get_automagics():
-                if amagic.__class__.__name__ in job['automagics']:
-                    automagics.append(amagic)
+                automagics = []
+                for amagic in AutomagicApi.get_automagics():
+                    if amagic.__class__.__name__ in job['automagics']:
+                        automagics.append(amagic)
 
-            ctx.config = HierarchicalDict(job['global_config'])
-            ctx.config.splice(plugin_config_path, HierarchicalDict(job['plugin_config']))
+                ctx.config = HierarchicalDict(job['global_config'])
+                ctx.config.splice(plugin_config_path, HierarchicalDict(job['plugin_config']))
 
-            threadrunner.put(run_automagics, automagics, ctx, plugin, plugin_config_path, progress_queue)
+                threadrunner.put(generate_plugin, automagics, ctx, plugin, plugin_config_path, progress_queue)
 
-            finished = False
-            result = None
-            while not finished:
-                try:
-                    progress = progress_queue.get(0.1)
-                    if progress:
-                        yield respond(progress)
-                    if (progress['type'] == 'finished' or progress['type'] == 'error'):
-                        if progress['type'] == 'finished':
-                            result = progress['result']
-                            break
-                except TimeoutError:
-                    pass
-
-            job['result'] = result
+                finished = False
+                result = None
+                while not finished:
+                    try:
+                        progress = progress_queue.get(0.1)
+                        if (progress['type'] == 'finished' or progress['type'] == 'error'):
+                            if progress['type'] == 'finished':
+                                result = progress['result']
+                                break
+                            else:
+                                yield respond(progress)
+                                break
+                        if progress:
+                            yield respond(progress)
+                    except TimeoutError:
+                        pass
+                job['result'] = result
             yield (respond({'type': 'complete-output',
-                            'data': {}}))
+                            'data': 'complete'}))
 
         return generator()
 
     run_job._cp_config = {'response.stream': True, 'tools.encode.encoding': 'utf-8'}
 
 
-def run_automagics(automagics, ctx, plugin, plugin_config_path, progress_queue):
+def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue):
     def progress_callback(value, message = None):
         progress_queue.put({'type': 'progress',
                             'data': {'value': value,
@@ -235,3 +240,55 @@ def run_automagics(automagics, ctx, plugin, plugin_config_path, progress_queue):
 threadrunner = BackgroundTaskQueue(cherrypy.engine)
 threadrunner.subscribe()
 progress_queue = queue.Queue()
+
+
+class ResultsApi(object):
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def list(self):
+        jobs = cherrypy.session.get('jobs', {})
+        return list(jobs)
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def get(self, job_id, index = None, page_size = None, sort_property = None, sort_direction = None):
+        print(index, page_size, sort_property, sort_direction)
+        if index is not None:
+            index = json.loads(index)
+        if page_size is not None:
+            page_size = json.loads(page_size)
+        if sort_property is not None:
+            sort_property = json.loads(page_size)
+        if sort_direction is not None:
+            sort_direction = json.loads(sort_direction)
+        jobs = cherrypy.session.get('jobs', {})
+        if (job_id not in jobs):
+            return []
+        job = jobs[job_id]
+        if not job.get('result', None):
+            return []
+
+        result = job['result']
+        sort_key = None
+        if sort_property is not None:
+            sort_key = ColumnSortKey(result, sort_property, sort_direction)
+
+        def visitor(node, accumulator):
+            item_dict = {'depth': result.path_depth(node)}
+            item_dict.update(dict(node.values._asdict()))
+            accumulator.append(item_dict)
+            return accumulator
+
+        return list(result.visit(None, visitor, initial_accumulator = [], sort_key = sort_key)[index:index + page_size])
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def columns(self, job_id):
+        jobs = cherrypy.session.get('jobs', {})
+        if (job_id not in jobs):
+            return []
+        job = jobs[job_id]
+        if not job['result']:
+            return []
+        return [{'index': column.index, 'name': column.name, 'type': column.type.__name__} for column in
+                job['result'].columns]
