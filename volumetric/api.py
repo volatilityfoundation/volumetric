@@ -46,6 +46,7 @@ class AutomagicApi(object):
             yield amagic
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def list(self):
         """Returns an automagic list of all the automagic objects"""
         amagics = self.get_automagics()
@@ -57,9 +58,10 @@ class AutomagicApi(object):
                            'description': amagic.__doc__[:amagic.__doc__.find("\n")],
                            'priority': amagic.priority}
             result.append(amagic_item)
-        return json.dumps(result)
+        return result
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def get_requirements(self):
         """Returns the requirements for each automagic"""
         result = []
@@ -74,7 +76,7 @@ class AutomagicApi(object):
                                'optional': req.optional,
                                'automagic': amagic.__class__.__name__}
                     result.append(reqment)
-        return json.dumps(result)
+        return result
 
 
 class PluginsApi(object):
@@ -94,13 +96,15 @@ class PluginsApi(object):
         return plugin_list
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def list(self):
         """List the available plugins"""
         plugin_list = self.get_plugins()
 
-        return json.dumps([name for name in plugin_list])
+        return [name for name in plugin_list]
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def get_requirements(self, plugin_name):
         """Returns a JSON object containing requirements"""
         plugin_list = self.get_plugins()
@@ -115,20 +119,22 @@ class PluginsApi(object):
                            'optional': req.optional,
                            'type': req.__class__.__name__}
                 reqs.append(reqment)
-        return json.dumps(reqs)
+        return reqs
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def create_job(self, plugin, automagics, global_config, plugin_config):
         """Stores the details locally"""
         job = {'plugin': plugin,
                'automagics': json.loads(automagics),
                'global_config': json.loads(global_config),
-               'plugin_config': json.loads(plugin_config)}
+               'plugin_config': json.loads(plugin_config),
+               'result': None}
         hash = hashlib.sha1(bytes(json.dumps(job), 'latin-1')).hexdigest()
         jobs = cherrypy.session.get('jobs', {})
         jobs[hash] = job
         cherrypy.session['jobs'] = jobs
-        return json.dumps(hash)
+        return hash
 
     @cherrypy.expose
     def run_job(self, job_id):
@@ -214,9 +220,13 @@ def run_automagics(automagics, ctx, plugin, plugin_config_path, progress_queue):
 
     constructed = plugin(ctx, plugin_config_path)
     result = constructed.run()
+
+    progress_queue.put({'type': 'columns',
+                        'data': [(column.index, column.name, column.type.__name__) for column in
+                                 result.columns]})
     for row in result.populate():
         progress_queue.put({'type': 'partial-output',
-                            'data': {'row': row}})
+                            'data': row})
     progress_queue.put({'type': 'finished',
                         'data': {'message': 'Complete'},
                         'result': result})
