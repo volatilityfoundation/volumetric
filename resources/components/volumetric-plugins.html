@@ -2,6 +2,7 @@
 <link rel="import" href="/resources/bower_components/paper-collapse-item/paper-collapse-item.html">
 <link rel="import" href="/resources/bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="/resources/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/resources/bower_components/paper-card/paper-card.html">
 <link rel="import" href="/resources/bower_components/iron-ajax/iron-ajax.html">
 
 <dom-module id="volumetric-plugins">
@@ -16,19 +17,27 @@
       paper-collapse-item {
           text-transform: capitalize;
       }
+
+      paper-card {
+          width: 100%;
+      }
     </style>
 
-        <iron-ajax url="/api/plugins/list" last-response="{{items}}" auto></iron-ajax>
+        <iron-ajax id="listPlugins" url="/api/plugins/list" last-response="{{items}}" auto></iron-ajax>
 
-        <template is="dom-repeat" items="[[_top_level(items)]]">
-            <paper-collapse-item header="[[item]]">
-                <paper-listbox>
-                    <template is="dom-repeat" items="[[_filtered(items, item)]]" as="subitem">
-                        <paper-item value="{{subitem}}" on-tap="_select_plugin">{{_friendly_name(subitem)}}</paper-item>
-                    </template>
-                </paper-listbox>
-            </paper-collapse-item>
-        </template>
+
+        <paper-card heading="Available Plugins">
+            <template is="dom-repeat" items="[[_top_level(items)]]">
+                <paper-collapse-item header="[[item]]">
+                    <paper-listbox>
+                        <template is="dom-repeat" items="[[_filtered(items, item)]]" as="subitem">
+                            <paper-item value="{{subitem}}" on-tap="_select_plugin">{{_friendly_name(subitem)}}
+                            </paper-item>
+                        </template>
+                    </paper-listbox>
+                </paper-collapse-item>
+            </template>
+        </paper-card>
 
     </template>
 
@@ -42,6 +51,7 @@
             return {
                 'page': {
                     type: String,
+                    observer: '_refresh',
                     notify: true
                 },
                 'plugin': {
@@ -63,6 +73,12 @@
                 }
             }
             return result;
+        }
+
+        _refresh() {
+            if (this.page == 'plugins') {
+                this.$.listPlugins.generateRequest();
+            }
         }
 
         _select_plugin(e) {

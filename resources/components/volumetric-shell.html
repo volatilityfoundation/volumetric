@@ -1,4 +1,5 @@
 <link rel="import" href="/resources/bower_components/polymer/polymer-element.html">
+<link rel="import" href="/resources/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="/resources/bower_components/app-layout/app-header/app-header.html">
 <link rel="import" href="/resources/bower_components/app-layout/app-header-layout/app-header-layout.html">
 <link rel="import" href="/resources/bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
@@ -12,7 +13,7 @@
 
 <dom-module id="volumetric-shell">
     <template>
-        <style>
+        <style is="custom-style" include="iron-flex iron-flex-alignment">
             :host {
                 display: block;
                 margin: 0px;
@@ -21,6 +22,15 @@
 
             paper-progress {
                 width: 100%;
+            }
+
+            paper-progress.error {
+                --paper-progress-active-color: var(--paper-red-500);
+            }
+
+            .status-text {
+                text-align: center;
+                font-size: 75%;
             }
 
             .edge-fade {
@@ -54,9 +64,10 @@
                 <paper-icon-button src="/resources/images/volatility.svg" on-tap="_returnHome"></paper-icon-button>
                 <div>Volumetric</div>
                 <div class="edge-fade"></div>
-                <div class="text-capitalize" main-title>[[page]]</div>
-                <paper-icon-button icon="settings"></paper-icon-button>
-                <paper-progress value="[[progress]]" bottom-item></paper-progress>
+                <div class="text-capitalize">[[page]]</div>
+                <div id="status" class="main-title flex status-text">[[status]]</div>
+                <paper-icon-button class="end-justified" icon="settings"></paper-icon-button>
+                <paper-progress id="progressBar" value="[[progress]]" bottom-item></paper-progress>
             </app-toolbar>
         </app-header>
 
@@ -68,7 +79,7 @@
                 role="main">
             <volumetric-plugins name="plugins" page="{{page}}" plugin="{{plugin}}"></volumetric-plugins>
             <volumetric-config name="config" page="{{page}}" plugin="{{plugin}}" job-id="{{jobId}}"></volumetric-config>
-            <volumetric-results name="results" page="{{page}}"></volumetric-results>
+            <volumetric-results id="resultsPage" name="results" page="{{page}}" job-id="{{jobId}}"></volumetric-results>
             <volumetric-404 name="404"></volumetric-404>
         </iron-pages>
     </template>
@@ -135,6 +146,11 @@
                 null,
                 this._showPage404.bind(this),
                 true);
+            if (page == 'plugins') {
+                this.status = '';
+                this.$.progressBar.classList.remove("error");
+                this.progress = 0;
+            }
         }
 
         _showPage404() {
@@ -149,15 +165,23 @@
             this.eventSource = new EventSource('/api/plugins/run_job?job_id=' + this.jobId);
             this.eventSource.addEventListener('progress', (e) => {
                 let data = JSON.parse(e.data);
+                this.$.progressBar.classList.remove("error");
                 this.progress = data['value'];
+                this.status = data['message'];
             });
             this.eventSource.addEventListener('error', (e) => {
-                console.log("Error in job");
+                this.progress = 100;
+                this.$.progressBar.classList.add("error");
+                let data = JSON.parse(e.data);
+                this.status = data['message'];
                 e.target.close();
             });
             this.eventSource.addEventListener('warning', (e) => {
-                console.log("Error in job");
-                e.target.close();
+                this.$.progressBar.classList.add("error");
+                this.status = data['message'];
+            });
+            this.eventSource.addEventListener('columns', (e) => {
+                console.log("Partial output");
             });
             this.eventSource.addEventListener('partial-output', (e) => {
                 console.log("Partial output");
@@ -165,9 +189,10 @@
             this.eventSource.addEventListener('complete-output', (e) => {
                 console.log("Complete output");
                 e.target.close();
+                this.$.resultsPage.buildGrid();
             });
-
         }
+
     }
 
     window.customElements.define(VolumetricShell.is, VolumetricShell);

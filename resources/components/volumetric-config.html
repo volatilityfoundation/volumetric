@@ -159,12 +159,14 @@
         }
 
         _refresh() {
-            if (this.$.tabs.selected === undefined) {
-                this.$.tabs.selected = 0;
+            if (this.page == 'config') {
+                if (this.$.tabs.selected === undefined) {
+                    this.$.tabs.selected = 0;
+                }
+                this.$.getRequirements.generateRequest();
+                this.$.getAutomagics.generateRequest();
+                this.$.getAutomagicRequirements.generateRequest();
             }
-            this.$.getRequirements.generateRequest();
-            this.$.getAutomagics.generateRequest();
-            this.$.getAutomagicRequirements.generateRequest();
         }
 
         _changeType(key, value) {
