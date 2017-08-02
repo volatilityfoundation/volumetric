@@ -227,11 +227,17 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
     result = constructed.run()
 
     progress_queue.put({'type': 'columns',
-                        'data': [(column.index, column.name, column.type.__name__) for column in
-                                 result.columns]})
-    for row in result.populate():
-        progress_queue.put({'type': 'partial-output',
-                            'data': row})
+                        'data': [(-1, 'depth', 'int')] +
+                                [(column.index, column.name, column.type.__name__) for column in result.columns]
+                        })
+
+    def visit(node, accumulator):
+        accumulator.put({'type': 'partial-output',
+                         'data': [node.path_depth] + list(node.values)})
+        return accumulator
+
+    result.populate(visit, progress_queue)
+
     progress_queue.put({'type': 'finished',
                         'data': {'message': 'Complete'},
                         'result': result})
