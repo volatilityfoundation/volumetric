@@ -169,8 +169,7 @@
                 this.$.resultsPage.metadata = {'columns': {}, 'size': 20};
                 this.$.resultsPage.$.displayCard.heading = "Processing...";
                 this.$.resultsPage.$.grid.clearCache();
-                this.$.resultsPage.$.partialColumns = [];
-                this.$.resultsPage.$.partialData = [];
+                this.$.resultsPage.clearPartialResults();
             }
 
             this.eventSource = new EventSource('/api/plugins/run_job?job_id=' + this.jobId);

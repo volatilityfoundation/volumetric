@@ -104,6 +104,11 @@
             return this.push('partialData', data);
         }
 
+        clearPartialResults() {
+            this.set('partialColumns', []);
+            this.set('partialData', []);
+        }
+
         buildGrid() {
             this.$.resultView.selected = 1;
             let getResultPage = this.$.getResultPage;

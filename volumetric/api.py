@@ -154,7 +154,8 @@ class PluginsApi(object):
                                'data': {'message': 'Failed to locate prepared job'}})
                 raise StopIteration
             job = jobs[job_id]
-            if not job.get('result', False):
+
+            if job['result'] is None:
                 ctx = cherrypy.session.get('context', contexts.Context())
 
                 plugins = self.get_plugins()
@@ -238,6 +239,7 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
     except Exception as e:
         progress_queue.put({'type': 'error',
                             'data': {'message': 'Exception: {}'.format(e)}})
+        return None
 
     progress_queue.put({'type': 'finished',
                         'data': {'message': 'Complete'},
