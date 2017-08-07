@@ -154,49 +154,42 @@ class PluginsApi(object):
                                'data': {'message': 'Failed to locate prepared job'}})
                 raise StopIteration
             job = jobs[job_id]
-            if not job['result']:
+            if not job.get('result', False):
+                ctx = cherrypy.session.get('context', contexts.Context())
 
-                try:
-                    ctx = cherrypy.session.get('context', contexts.Context())
+                plugins = self.get_plugins()
+                if job['plugin'] not in plugins:
+                    yield respond({'type': 'error',
+                                   'data': {'message': 'Invalid plugin selected'}})
+                    raise StopIteration
+                plugin = plugins[job['plugin']]
+                plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
 
-                    plugins = self.get_plugins()
-                    if job['plugin'] not in plugins:
-                        yield respond({'type': 'error',
-                                       'data': {'message': 'Invalid plugin selected'}})
-                        raise StopIteration
-                    plugin = plugins[job['plugin']]
-                    plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
+                automagics = []
+                for amagic in AutomagicApi.get_automagics():
+                    if amagic.__class__.__name__ in job['automagics']:
+                        automagics.append(amagic)
 
-                    automagics = []
-                    for amagic in AutomagicApi.get_automagics():
-                        if amagic.__class__.__name__ in job['automagics']:
-                            automagics.append(amagic)
+                ctx.config = HierarchicalDict(job['global_config'])
+                ctx.config.splice(plugin_config_path, HierarchicalDict(job['plugin_config']))
 
-                    ctx.config = HierarchicalDict(job['global_config'])
-                    ctx.config.splice(plugin_config_path, HierarchicalDict(job['plugin_config']))
+                threadrunner.put(generate_plugin, automagics, ctx, plugin, plugin_config_path, progress_queue)
 
-                    threadrunner.put(generate_plugin, automagics, ctx, plugin, plugin_config_path, progress_queue)
-
-                    finished = False
-                    result = None
-                    while not finished:
-                        try:
-                            progress = progress_queue.get(0.1)
-                            if (progress['type'] == 'finished' or progress['type'] == 'error'):
-                                if progress['type'] == 'finished':
-                                    result = progress['result']
-                                    break
-                                else:
-                                    yield respond(progress)
-                                    break
-                            if progress:
+                finished = False
+                while not finished:
+                    try:
+                        progress = progress_queue.get(0.1)
+                        if (progress['type'] == 'finished' or progress['type'] == 'error'):
+                            if progress['type'] == 'finished':
+                                job['result'] = progress['result']
+                                break
+                            else:
                                 yield respond(progress)
-                        except TimeoutError:
-                            pass
-                    job['result'] = result
-                except Exception as e:
-                    yield (respond({'type': 'error',
-                                    'data': {'message': 'Exception: {}'.format(e)}}))
+                                break
+                        if progress:
+                            yield respond(progress)
+                    except TimeoutError:
+                        pass
             yield (respond({'type': 'complete-output',
                             'data': 'complete'}))
 

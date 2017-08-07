@@ -16,22 +16,45 @@
       paper-card {
           width: 100%;
       }
+
+      .constrained {
+          width: 100%;
+          overflow: auto;
+      }
     </style>
 
         <iron-ajax id="getResultMetadata" url="/api/results/metadata" last-response="{{metadata}}"></iron-ajax>
         <iron-ajax id="getResultPage" url="/api/results/get?job_id=[[jobId]]"></iron-ajax>
 
         <paper-card id="displayCard" heading="Processing...">
-            <vaadin-grid id="grid">
-                <template is="dom-repeat" items="[[getColumns(metadata)]]" as="column">
-                    <vaadin-grid-column>
-                        <template class="header">
-                            <vaadin-grid-sorter path="[[column]]">[[column]]</vaadin-grid-sorter>
+            <iron-pages id="resultView" selected="0">
+                <div class="constrained">
+                    <table>
+                        <tr>
+                            <template is="dom-repeat" items="[[partialColumns]]">
+                                <th>{{getColumnName(item)}}</th>
+                            </template>
+                        </tr>
+                        <template is="dom-repeat" items="[[partialData]]">
+                            <tr>
+                                <template is="dom-repeat" items="[[item]]" as="dataval">
+                                    <td>{{dataval}}</td>
+                                </template>
+                            </tr>
                         </template>
-                        <template>[[getItem(column,item)]]</template>
-                    </vaadin-grid-column>
-                </template>
-            </vaadin-grid>
+                    </table>
+                </div>
+                <vaadin-grid id="grid">
+                    <template is="dom-repeat" items="[[getColumns(metadata)]]" as="column">
+                        <vaadin-grid-column>
+                            <template class="header">
+                                <vaadin-grid-sorter path="[[column]]">[[column]]</vaadin-grid-sorter>
+                            </template>
+                            <template>[[getItem(column,item)]]</template>
+                        </vaadin-grid-column>
+                    </template>
+                </vaadin-grid>
+            </iron-pages>
         </paper-card>
 
     </template>
@@ -44,6 +67,16 @@
 
         static get properties() {
             return {
+                'partialColumns': {
+                    type: Object,
+                    notify: true,
+                    value: []
+                },
+                'partialData': {
+                    type: Object,
+                    notify: true,
+                    value: []
+                },
                 'page': {
                     type: String,
                     notify: true
@@ -51,7 +84,7 @@
                 'jobId': {
                     type: String,
                     notify: true
-                },
+                }
             }
         }
 
@@ -63,7 +96,16 @@
             return result;
         }
 
+        getColumnName(item) {
+            return item[1];
+        }
+
+        addPartialData(data) {
+            return this.push('partialData', data);
+        }
+
         buildGrid() {
+            this.$.resultView.selected = 1;
             let getResultPage = this.$.getResultPage;
             let getResultMetadata = this.$.getResultMetadata;
             let grid = this.$.grid;

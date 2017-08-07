@@ -108,7 +108,7 @@
                     value: 0,
                     type: Number,
                     notify: true
-                },
+                }
             };
         }
 
@@ -164,10 +164,13 @@
 
         _launchJob() {
             if (this.$.resultsPage.$ !== undefined) {
+                // Reset the results page if it's been loaded.
                 this.progress = 0;
                 this.$.resultsPage.metadata = {'columns': {}, 'size': 20};
                 this.$.resultsPage.$.displayCard.heading = "Processing...";
                 this.$.resultsPage.$.grid.clearCache();
+                this.$.resultsPage.$.partialColumns = [];
+                this.$.resultsPage.$.partialData = [];
             }
 
             this.eventSource = new EventSource('/api/plugins/run_job?job_id=' + this.jobId);
@@ -190,16 +193,30 @@
                 this.status = data['message'];
             });
             this.eventSource.addEventListener('columns', (e) => {
-                console.log("Partial output");
+                console.log("Partial output columns");
+                let data = JSON.parse(e.data);
+                if (this.$.resultsPage.$ !== undefined) {
+                    this.$.resultsPage.$.resultView.selected = 0;
+                    this.$.resultsPage.partialColumns = data;
+                }
             });
             this.eventSource.addEventListener('partial-output', (e) => {
                 console.log("Partial output");
+                let data = JSON.parse(e.data);
+                if (this.$.resultsPage.$ !== undefined) {
+                    this.$.resultsPage.$.resultView.selected = 0;
+                    this.$.resultsPage.addPartialData(data);
+                }
             });
             this.eventSource.addEventListener('complete-output', (e) => {
                 console.log("Complete output");
                 e.target.close();
                 this.progress = 100;
-                this.$.resultsPage.buildGrid();
+                if (this.$.resultsPage.buildGrid !== undefined) {
+                    // FIXME: We should check for when resultsPage has loaded
+                    // It's not clear why buildGrid might not exist?
+                    this.$.resultsPage.buildGrid();
+                }
             });
         }
 
