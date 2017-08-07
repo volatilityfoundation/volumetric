@@ -156,43 +156,47 @@ class PluginsApi(object):
             job = jobs[job_id]
             if not job['result']:
 
-                ctx = cherrypy.session.get('context', contexts.Context())
+                try:
+                    ctx = cherrypy.session.get('context', contexts.Context())
 
-                plugins = self.get_plugins()
-                if job['plugin'] not in plugins:
-                    yield respond({'type': 'error',
-                                   'data': {'message': 'Invalid plugin selected'}})
-                    raise StopIteration
-                plugin = plugins[job['plugin']]
-                plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
+                    plugins = self.get_plugins()
+                    if job['plugin'] not in plugins:
+                        yield respond({'type': 'error',
+                                       'data': {'message': 'Invalid plugin selected'}})
+                        raise StopIteration
+                    plugin = plugins[job['plugin']]
+                    plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
 
-                automagics = []
-                for amagic in AutomagicApi.get_automagics():
-                    if amagic.__class__.__name__ in job['automagics']:
-                        automagics.append(amagic)
+                    automagics = []
+                    for amagic in AutomagicApi.get_automagics():
+                        if amagic.__class__.__name__ in job['automagics']:
+                            automagics.append(amagic)
 
-                ctx.config = HierarchicalDict(job['global_config'])
-                ctx.config.splice(plugin_config_path, HierarchicalDict(job['plugin_config']))
+                    ctx.config = HierarchicalDict(job['global_config'])
+                    ctx.config.splice(plugin_config_path, HierarchicalDict(job['plugin_config']))
 
-                threadrunner.put(generate_plugin, automagics, ctx, plugin, plugin_config_path, progress_queue)
+                    threadrunner.put(generate_plugin, automagics, ctx, plugin, plugin_config_path, progress_queue)
 
-                finished = False
-                result = None
-                while not finished:
-                    try:
-                        progress = progress_queue.get(0.1)
-                        if (progress['type'] == 'finished' or progress['type'] == 'error'):
-                            if progress['type'] == 'finished':
-                                result = progress['result']
-                                break
-                            else:
+                    finished = False
+                    result = None
+                    while not finished:
+                        try:
+                            progress = progress_queue.get(0.1)
+                            if (progress['type'] == 'finished' or progress['type'] == 'error'):
+                                if progress['type'] == 'finished':
+                                    result = progress['result']
+                                    break
+                                else:
+                                    yield respond(progress)
+                                    break
+                            if progress:
                                 yield respond(progress)
-                                break
-                        if progress:
-                            yield respond(progress)
-                    except TimeoutError:
-                        pass
-                job['result'] = result
+                        except TimeoutError:
+                            pass
+                    job['result'] = result
+                except Exception as e:
+                    yield (respond({'type': 'error',
+                                    'data': {'message': 'Exception: {}'.format(e)}}))
             yield (respond({'type': 'complete-output',
                             'data': 'complete'}))
 
@@ -207,6 +211,11 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
                             'data': {'value': value,
                                      'message': message}
                             })
+
+    def visit(node, accumulator):
+        accumulator.put({'type': 'partial-output',
+                         'data': [node.path_depth] + list(node.values)})
+        return accumulator
 
     # Disable multi-processing using multiple multi-processes doesn't have any issues
     volatility.framework.constants.DISABLE_MULTITHREADED_SCANNING = True
@@ -223,20 +232,19 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
                             'data': {'message': 'Plugin requirements not satisfied'}})
         return None
 
-    constructed = plugin(ctx, plugin_config_path)
-    result = constructed.run()
+    try:
+        constructed = plugin(ctx, plugin_config_path)
+        result = constructed.run()
 
-    progress_queue.put({'type': 'columns',
-                        'data': [(-1, 'depth', 'int')] +
-                                [(column.index, column.name, column.type.__name__) for column in result.columns]
-                        })
+        progress_queue.put({'type': 'columns',
+                            'data': [(-1, 'depth', 'int')] +
+                                    [(column.index, column.name, column.type.__name__) for column in result.columns]
+                            })
 
-    def visit(node, accumulator):
-        accumulator.put({'type': 'partial-output',
-                         'data': [node.path_depth] + list(node.values)})
-        return accumulator
-
-    result.populate(visit, progress_queue)
+        result.populate(visit, progress_queue)
+    except Exception as e:
+        progress_queue.put({'type': 'error',
+                            'data': {'message': 'Exception: {}'.format(e)}})
 
     progress_queue.put({'type': 'finished',
                         'data': {'message': 'Complete'},

@@ -185,6 +185,7 @@
                 e.target.close();
             });
             this.eventSource.addEventListener('warning', (e) => {
+                let data = JSON.parse(e.data);
                 this.$.progressBar.classList.add("error");
                 this.status = data['message'];
             });
