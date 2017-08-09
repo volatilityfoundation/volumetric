@@ -12,11 +12,27 @@ Volumetric relies upon the following:
 
 # Installation
 
-From the top level directory run:
+## Install Cherrypy
+
+To install cherrypy locally, run:
+
+pip3 install --user --upgrade cherrypy
+
+## Install bower dependencies
+
+Install bower:
+
+npm install bower
+
+Then from the top level directory run:
 
 bower update
 
-then from the same directory run:
+# Running the server
 
-python vol.py
+From the top level directory
+
+python3 vol.py -d
+
+
 
