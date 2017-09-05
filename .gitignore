@@ -7,3 +7,4 @@ node_modules
 
 # Symlink of the volatility code for testing
 volatility
+logs.txt
