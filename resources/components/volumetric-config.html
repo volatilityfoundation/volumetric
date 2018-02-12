@@ -53,10 +53,20 @@
                     <paper-collapse-item header="Automagic Options" opened>
                         <iron-form id="runAutomagicForm">
                             <template is="dom-repeat" items="{{automagicRequirements}}">
-                                <paper-input label="{{_friendlyName(item.name)}} ({{item.description}})"
-                                             value="{{item.default}}" name="vol_{{item.name}}" auto-validate="true"
-                                             required="{{!item.optional}}"
-                                             error-message="Invalid value"></paper-input>
+                                <template is="dom-if" if="{{!is_list(item.type)}}">
+                                    <paper-input label="{{_friendlyName(item.name)}} ({{item.description}})"
+                                                 value="{{item.default}}" name="vol_{{item.name}}" auto-validate="true"
+                                                 required="{{!item.optional}}"
+                                                 error-message="Invalid value"></paper-input>
+                                </template>
+                                <template is="dom-if" if="{{is_list(item.type)}}">
+                                    <paper-listbox>
+                                        <template is="dom-repeat">
+                                            <!-- TODO: Make sure list requirements work -->
+                                            <paper-item>{{item}}</paper-item>
+                                        </template>
+                                    </paper-listbox>
+                                </template>
                             </template>
                         </iron-form>
                     </paper-collapse-item>
@@ -68,10 +78,21 @@
                         <div class="flex">
                             <paper-collapse-item header="{{plugin}} Options" opened>
                                 <template is="dom-repeat" items="{{requirements}}">
-                                    <paper-input label="{{_friendlyName(item.name)}} ({{item.description}})"
-                                                 label="{{item.default}}" name="vol_{{item.name}}" auto-validate="true"
-                                                 required="{{!item.optional}}"
-                                                 error-message="Invalid value"></paper-input>
+                                    <template is="dom-if" if="{{!is_list(item.type)}}">
+                                        <paper-input label="{{_friendlyName(item.name)}} ({{item.description}})"
+                                                     label="{{item.default}}" name="vol_{{item.name}}"
+                                                     auto-validate="true"
+                                                     required="{{!item.optional}}"
+                                                     error-message="Invalid value"></paper-input>
+                                    </template>
+                                    <template is="dom-if" if="{{is_list(item.type)}}">
+                                        <paper-listbox>
+                                            <!-- TODO: Make sure list requirements work -->
+                                            <template is="dom-repeat">
+                                                <paper-item></paper-item>
+                                            </template>
+                                        </paper-listbox>
+                                    </template>
                                 </template>
                             </paper-collapse-item>
                         </div>
@@ -167,6 +188,10 @@
                 this.$.getAutomagics.generateRequest();
                 this.$.getAutomagicRequirements.generateRequest();
             }
+        }
+
+        is_list(name) {
+            return (name == 'ListRequirement');
         }
 
         _changeType(key, value) {

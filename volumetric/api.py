@@ -8,6 +8,7 @@ import cherrypy
 import volatility
 from volatility import framework, plugins
 from volatility.framework import constants, interfaces, contexts, automagic
+from volatility.framework.configuration import requirements
 from volatility.framework.interfaces import configuration
 from volatility.framework.interfaces.configuration import HierarchicalDict
 from volatility.framework.renderers import ColumnSortKey
@@ -69,7 +70,7 @@ class AutomagicApi(object):
         result = []
         for amagic in self.get_automagics():
             for req in amagic.get_requirements():
-                if isinstance(req, configuration.InstanceRequirement):
+                if isinstance(req, (configuration.InstanceRequirement, requirements.ListRequirement)):
                     automagic_config_path = interfaces.configuration.path_join('automagic', amagic.__class__.__name__)
                     reqment = {'name': automagic_config_path + '.' + req.name,
                                'description': req.description,
