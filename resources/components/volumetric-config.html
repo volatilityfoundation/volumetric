@@ -2,6 +2,7 @@
 <link rel="import" href="/resources/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="/resources/bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="/resources/bower_components/iron-form/iron-form.html">
+<link rel="import" href="/resources/bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="/resources/bower_components/paper-collapse-item/paper-collapse-item.html">
 <link rel="import" href="/resources/bower_components/paper-input/paper-input.html">
 <link rel="import" href="/resources/bower_components/paper-item/paper-item.html">
@@ -11,6 +12,8 @@
 <link rel="import" href="/resources/bower_components/paper-header-panel/paper-header-panel.html">
 <link rel="import" href="/resources/bower_components/paper-tabs/paper-tabs.html">
 <link rel="import" href="/resources/bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="/resources/components/volumetric-requirement-editor.html">
+<link rel="import" href="/resources/components/volumetric-requirement-string.html">
 
 <dom-module id="volumetric-config">
     <template>
@@ -44,7 +47,7 @@
                         <template is="dom-repeat" items="{{automagics}}">
                             <paper-item>
                                 <paper-checkbox name="automagic_{{item.name}}" checked="_automagicEnabled(item)"
-                                                on-tap="_automagicTapped" item="{{item}}">
+                                                on-tap="_automagicTapped" item$="{{item}}">
                                     {{item.name}} - {{item.description}}
                                 </paper-checkbox>
                             </paper-item>
@@ -52,22 +55,8 @@
                     </paper-collapse-item>
                     <paper-collapse-item header="Automagic Options" opened>
                         <iron-form id="runAutomagicForm">
-                            <template is="dom-repeat" items="{{automagicRequirements}}">
-                                <template is="dom-if" if="{{!is_list(item.type)}}">
-                                    <paper-input label="{{_friendlyName(item.name)}} ({{item.description}})"
-                                                 value="{{item.default}}" name="vol_{{item.name}}" auto-validate="true"
-                                                 required="{{!item.optional}}"
-                                                 error-message="Invalid value"></paper-input>
-                                </template>
-                                <template is="dom-if" if="{{is_list(item.type)}}">
-                                    <paper-listbox>
-                                        <template is="dom-repeat">
-                                            <!-- TODO: Make sure list requirements work -->
-                                            <paper-item>{{item}}</paper-item>
-                                        </template>
-                                    </paper-listbox>
-                                </template>
-                            </template>
+                            <volumetric-requirement-editor
+                                    requirements="{{automagicRequirements}}"></volumetric-requirement-editor>
                         </iron-form>
                     </paper-collapse-item>
                     <paper-tabs id="tabs" selected="{{configPage}}">
@@ -77,23 +66,8 @@
                     <iron-pages selected="{{configPage}}">
                         <div class="flex">
                             <paper-collapse-item header="{{plugin}} Options" opened>
-                                <template is="dom-repeat" items="{{requirements}}">
-                                    <template is="dom-if" if="{{!is_list(item.type)}}">
-                                        <paper-input label="{{_friendlyName(item.name)}} ({{item.description}})"
-                                                     label="{{item.default}}" name="vol_{{item.name}}"
-                                                     auto-validate="true"
-                                                     required="{{!item.optional}}"
-                                                     error-message="Invalid value"></paper-input>
-                                    </template>
-                                    <template is="dom-if" if="{{is_list(item.type)}}">
-                                        <paper-listbox>
-                                            <!-- TODO: Make sure list requirements work -->
-                                            <template is="dom-repeat">
-                                                <paper-item></paper-item>
-                                            </template>
-                                        </paper-listbox>
-                                    </template>
-                                </template>
+                                <volumetric-requirement-editor
+                                        requirements="{{requirements}}"></volumetric-requirement-editor>
                             </paper-collapse-item>
                         </div>
                         <div class="flex">
@@ -175,10 +149,6 @@
             return this.automagics[item.name]['selected'];
         }
 
-        _friendlyName(name) {
-            return name.substring(name.lastIndexOf('.') + 1, name.length)
-        }
-
         _refresh() {
             if (this.page == 'config') {
                 if (this.$.tabs.selected === undefined) {
@@ -188,10 +158,6 @@
                 this.$.getAutomagics.generateRequest();
                 this.$.getAutomagicRequirements.generateRequest();
             }
-        }
-
-        is_list(name) {
-            return (name == 'ListRequirement');
         }
 
         _changeType(key, value) {

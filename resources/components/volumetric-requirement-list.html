@@ -1,0 +1,44 @@
+<link rel="import" href="/resources/bower_components/polymer/polymer-element.html">
+<link rel="import" href="/resources/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="/resources/bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="/resources/bower_components/iron-form/iron-form.html">
+<link rel="import" href="/resources/bower_components/paper-card/paper-card.html">
+<link rel="import" href="/resources/bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="/resources/bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/resources/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/resources/bower_components/paper-item/paper-item.html">
+
+<dom-module id="volumetric-requirement-list">
+    <template>
+        <div class="horizontal">
+            <paper-input></paper-input>
+            <paper-icon-button icon="add"></paper-icon-button>
+            <paper-icon-button icon="remove"></paper-icon-button>
+        </div>
+        <paper-listbox>
+            <!-- TODO: Make sure list requirements work -->
+            <template is="dom-repeat" items="{{element.elements}}">
+                <paper-item></paper-item>
+            </template>
+        </paper-listbox>
+    </template>
+
+    <script>
+        class VolumetricRequirementList extends Polymer.Element {
+            static get is() {
+                return 'volumetric-requirement-list';
+            }
+
+            static get properties() {
+                return {
+                    'element': {
+                        type: Object,
+                        notify: true
+                    }
+                }
+            }
+        }
+
+        window.customElements.define(VolumetricRequirementList.is, VolumetricRequirementList);
+    </script>
+</dom-module>

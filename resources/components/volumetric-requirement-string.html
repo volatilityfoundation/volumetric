@@ -1,0 +1,41 @@
+<link rel="import" href="/resources/bower_components/polymer/polymer-element.html">
+<link rel="import" href="/resources/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="/resources/bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="/resources/bower_components/iron-form/iron-form.html">
+<link rel="import" href="/resources/bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="/resources/bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/resources/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/resources/bower_components/paper-item/paper-item.html">
+
+<dom-module id="volumetric-requirement-string">
+    <template>
+        <paper-input label="{{_friendlyName(element.name)}} ({{element.description}})"
+                     value="{{element.default}}" name="vol_{{element.name}}"
+                     auto-validate="true"
+                     required="{{!element.optional}}"
+                     error-message="Invalid value"></paper-input>
+    </template>
+
+    <script>
+        class VolumetricRequirementString extends Polymer.Element {
+            static get is() {
+                return 'volumetric-requirement-string';
+            }
+
+            static get properties() {
+                return {
+                    'element': {
+                        type: Object,
+                        notify: true
+                    }
+                }
+            }
+
+            _friendlyName(name) {
+                return name.substring(name.lastIndexOf('.') + 1, name.length)
+            }
+        }
+
+        window.customElements.define(VolumetricRequirementString.is, VolumetricRequirementString);
+    </script>
+</dom-module>

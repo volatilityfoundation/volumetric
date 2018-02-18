@@ -10,6 +10,10 @@
 <link rel="import" href="/resources/bower_components/paper-progress/paper-progress.html">
 <link rel="import" href="/resources/bower_components/app-route/app-location.html">
 <link rel="import" href="/resources/bower_components/app-route/app-route.html">
+<link rel="import" href="/resources/components/volumetric-config.html">
+<link rel="import" href="/resources/components/volumetric-plugins.html">
+<link rel="import" href="/resources/components/volumetric-results.html">
+<link rel="import" href="/resources/components/volumetric-404.html">
 
 <dom-module id="volumetric-shell">
     <template>
@@ -104,6 +108,7 @@
                 rootPattern: String,
                 routeData: Object,
                 subroute: String,
+                status: String,
                 progress: {
                     value: 0,
                     type: Number,
