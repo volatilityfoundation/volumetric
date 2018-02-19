@@ -128,10 +128,23 @@ class PluginsApi(object):
     @cherrypy.tools.json_out()
     def create_job(self, plugin, automagics, global_config, plugin_config):
         """Stores the details locally"""
+
+        # Ensure that non-list items that should be lists are turned into lists
+        global_config = json.loads(global_config)
+        plugin_config = json.loads(plugin_config)
+        for automagic_req in AutomagicApi().get_requirements():
+            if automagic_req['type'] == 'ListRequirement':
+                if not isinstance(global_config.get(automagic_req['name'], []), list):
+                    global_config[automagic_req['name']] = [global_config[automagic_req['name']]]
+        for req in self.get_requirements(plugin):
+            if automagic_req['type'] == 'ListRequirement':
+                if not isinstance(plugin_config.get(automagic_req['name'], []), list):
+                    plugin_config[automagic_req['name']] = [plugin_config[automagic_req['name']]]
+
         job = {'plugin': plugin,
                'automagics': json.loads(automagics),
-               'global_config': json.loads(global_config),
-               'plugin_config': json.loads(plugin_config),
+               'global_config': global_config,
+               'plugin_config': plugin_config,
                'result': None}
         hash = hashlib.sha1(bytes(json.dumps(job, sort_keys = True), 'latin-1')).hexdigest()
         jobs = cherrypy.session.get('jobs', {})

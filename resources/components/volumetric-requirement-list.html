@@ -10,17 +10,32 @@
 
 <dom-module id="volumetric-requirement-list">
     <template>
-        <div class="horizontal">
-            <paper-input></paper-input>
-            <paper-icon-button icon="add"></paper-icon-button>
-            <paper-icon-button icon="remove"></paper-icon-button>
+        <style is="custom-style" include="iron-flex iron-flex-alignment">
+            .fullwidth {
+                width: 100%;
+            }
+        </style>
+        <div class="layout horizontal fullwidth">
+            <div class="layout vertical">
+                <paper-icon-button icon="add" on-tap="btn_add"></paper-icon-button>
+                <paper-icon-button icon="remove" on-tap="btn_remove"></paper-icon-button>
+            </div>
+            <div class="fullwidth layout vertical">
+                <div>{{_friendlyName(element.name)}} ({{element.description}})</div>
+                <paper-listbox id="listbox" class="fullwidth">
+                    <template is="dom-repeat" items="{{elements}}">
+                        <paper-item>
+                            <!-- TODO: Ideally this would be string/integer/boolean requirements -->
+                            <paper-input label="{{_friendlyName(element.name)}}"
+                                         value="{{item}}" name="vol_{{element.name}}"
+                                         auto-validate="true" class="fullwidth"
+                                         required="{{!element.optional}}"
+                                         error-message="Invalid value"></paper-input>
+                        </paper-item>
+                    </template>
+                </paper-listbox>
+            </div>
         </div>
-        <paper-listbox>
-            <!-- TODO: Make sure list requirements work -->
-            <template is="dom-repeat" items="{{element.elements}}">
-                <paper-item></paper-item>
-            </template>
-        </paper-listbox>
     </template>
 
     <script>
@@ -34,8 +49,33 @@
                     'element': {
                         type: Object,
                         notify: true
+                    },
+                    'elements': {
+                        type: Object,
+                        notify: true,
+                        value: function() {
+                            return [];
+                        }
                     }
                 }
+            }
+
+            btn_add() {
+                this.push("elements", "");
+            }
+
+            btn_remove() {
+                var index = this.$.listbox.selected;
+                this.elements.splice(index, 1);
+                this.notifySplices('elements', {index: index, removed: "", addedCount: 0, object: this.elements});
+            }
+
+            clone(obj) {
+                return JSON.parse(JSON.stringify(obj));
+            }
+
+            _friendlyName(name) {
+                return name.substring(name.lastIndexOf('.') + 1, name.length)
             }
         }
 
