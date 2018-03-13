@@ -160,6 +160,7 @@ class PluginsApi(object):
         def generator():
             def respond(item):
                 print("RESPONSE", item)
+                # TODO: Further differentiate between AbsentValues
                 for i in range(len(item['data'])):
                     if isinstance(item['data'][i], renderers.BaseAbsentValue):
                         item['data'][i] = "-"
@@ -303,6 +304,7 @@ class ResultsApi(object):
             item_dict.update(dict(node.values._asdict()))
             for key, value in item_dict.items():
                 if isinstance(value, renderers.BaseAbsentValue):
+                    # TODO: Further differentiate between AbsentValues
                     item_dict[key] = "-"
             accumulator.append(item_dict)
             return accumulator
