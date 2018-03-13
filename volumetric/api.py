@@ -9,7 +9,7 @@ import volatility
 from volatility import framework, plugins
 from volatility.framework import constants, interfaces, contexts, automagic
 from volatility.framework.configuration import requirements
-from volatility.framework.interfaces import configuration
+from volatility.framework.interfaces import configuration, renderers
 from volatility.framework.interfaces.configuration import HierarchicalDict
 from volatility.framework.renderers import ColumnSortKey
 from volumetric.backqueue import BackgroundTaskQueue
@@ -160,6 +160,9 @@ class PluginsApi(object):
         def generator():
             def respond(item):
                 print("RESPONSE", item)
+                for i in range(len(item['data'])):
+                    if isinstance(item['data'][i], renderers.BaseAbsentValue):
+                        item['data'][i] = "-"
                 return "retry: 1000\nevent: {}\ndata: {}\n\n".format(item['type'], json.dumps(item['data']))
 
             jobs = cherrypy.session.get('jobs', {})
@@ -298,6 +301,9 @@ class ResultsApi(object):
         def visitor(node, accumulator):
             item_dict = {'depth': result.path_depth(node)}
             item_dict.update(dict(node.values._asdict()))
+            for key, value in item_dict.items():
+                if isinstance(value, renderers.BaseAbsentValue):
+                    item_dict[key] = "-"
             accumulator.append(item_dict)
             return accumulator
 
