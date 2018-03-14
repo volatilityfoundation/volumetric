@@ -3,6 +3,7 @@
 <link rel="import" href="/resources/bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="/resources/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="/resources/bower_components/paper-card/paper-card.html">
+<link rel="import" href="/resources/bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="/resources/bower_components/vaadin-grid/vaadin-grid.html">
 <link rel="import" href="/resources/bower_components/vaadin-grid/vaadin-grid-sorter.html">
 
@@ -29,34 +30,44 @@
         <iron-ajax id="getResultPage" url="/api/results/get?job_id=[[jobId]]"></iron-ajax>
 
         <paper-card id="displayCard" heading="Processing...">
-            <iron-pages id="resultView" selected="0">
-                <div class="constrained">
-                    <table>
-                        <tr>
-                            <template is="dom-repeat" items="[[partialColumns]]">
-                                <th>{{getColumnName(item)}}</th>
-                            </template>
-                        </tr>
-                        <template is="dom-repeat" items="[[partialData]]">
+            <div class="card-content">
+                <iron-pages id="resultView" selected="0">
+                    <div class="constrained">
+                        <table>
                             <tr>
-                                <template is="dom-repeat" items="[[item]]" as="dataval">
-                                    <td>{{dataval}}</td>
+                                <template is="dom-repeat" items="[[partialColumns]]">
+                                    <th>{{getColumnName(item)}}</th>
                                 </template>
                             </tr>
-                        </template>
-                    </table>
-                </div>
-                <vaadin-grid id="grid">
-                    <template is="dom-repeat" items="[[getColumns(metadata)]]" as="column">
-                        <vaadin-grid-column>
-                            <template class="header">
-                                <vaadin-grid-sorter path="[[column]]">[[column]]</vaadin-grid-sorter>
+                            <template is="dom-repeat" items="[[partialData]]">
+                                <tr>
+                                    <template is="dom-repeat" items="[[item]]" as="dataval">
+                                        <td>{{dataval}}</td>
+                                    </template>
+                                </tr>
                             </template>
-                            <template>[[getItem(column,item)]]</template>
-                        </vaadin-grid-column>
-                    </template>
-                </vaadin-grid>
-            </iron-pages>
+                        </table>
+                    </div>
+                    <vaadin-grid id="grid">
+                        <template is="dom-repeat" items="[[getColumns(metadata)]]" as="column">
+                            <vaadin-grid-column>
+                                <template class="header">
+                                    <vaadin-grid-sorter path="[[column]]">[[column]]</vaadin-grid-sorter>
+                                </template>
+                                <template>[[getItem(column,item)]]</template>
+                            </vaadin-grid-column>
+                        </template>
+                    </vaadin-grid>
+                </iron-pages>
+            </div>
+            <div class="card-actions">
+                <a href="/api/results/download_config?job_id=[[jobId]]" target="_blank">
+                    <paper-icon-button icon="icons:restore-page"></paper-icon-button>
+                </a>
+                <a href="/api/results/download_results?job_id=[[jobId]]" target="_blank">
+                    <paper-icon-button icon="icons:file-download"></paper-icon-button>
+                </a>
+            </div>
         </paper-card>
 
     </template>

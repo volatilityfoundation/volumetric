@@ -1,4 +1,6 @@
+import csv
 import hashlib
+import io
 import json
 import logging
 import queue
@@ -205,7 +207,9 @@ class PluginsApi(object):
                             else:
                                 yield respond(progress)
                                 break
-                        if progress:
+                        if (progress['type'] == 'config'):
+                            job['config'] = progress['data']
+                        elif progress:
                             yield respond(progress)
                     except TimeoutError:
                         pass
@@ -246,6 +250,8 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
 
     try:
         constructed = plugin(ctx, plugin_config_path)
+        progress_queue.put({'type': 'config',
+                            'data': dict(constructed.build_configuration())})
         result = constructed.run()
 
         progress_queue.put({'type': 'columns',
@@ -318,8 +324,50 @@ class ResultsApi(object):
         if (job_id not in jobs):
             return None
         job = jobs[job_id]
-        if not job['result']:
+        if not job.get('result', None):
             return None
         return {'size': job['result'].row_count,
                 'columns': [{'index': column.index, 'name': column.name, 'type': column.type.__name__} for column in
                             job['result'].columns]}
+
+    @cherrypy.expose
+    def download_config(self, job_id):
+        """Allows the configuration to be downloaded"""
+        jobs = cherrypy.session.get('jobs', {})
+        if (job_id not in jobs):
+            return None
+        job = jobs[job_id]
+        if "config" not in job:
+            return None
+        cherrypy.response.headers['Content-Type'] = 'application/octet-stream'
+        return bytes(json.dumps(job['config'], sort_keys = True, indent = 2), "utf-8")
+
+    @cherrypy.expose
+    def download_results(self, job_id):
+        """Allows the results table to be downloaded as CSV"""
+        jobs = cherrypy.session.get('jobs', {})
+        if (job_id not in jobs):
+            return None
+        job = jobs[job_id]
+        cherrypy.response.headers['Content-Type'] = 'text/csv'
+        output_file = io.StringIO()
+
+        if 'result' not in job:
+            return None
+        grid = job['result']
+        column_names = [grid.sanitize_name(column.name) for column in grid.columns]
+        writer = csv.DictWriter(output_file, fieldnames = ['Depth'] + column_names)
+
+        writer.writeheader()
+
+        def row_writer(node, _accumulator):
+            row_dict = {'Depth': node.path_depth}
+            row_dict.update(node.values._asdict())
+            for key, value in row_dict.items():
+                if isinstance(value, renderers.BaseAbsentValue):
+                    row_dict[key] = "-"
+            writer.writerow(row_dict)
+
+        grid.visit(node = None, function = row_writer)
+
+        return output_file.getvalue()
