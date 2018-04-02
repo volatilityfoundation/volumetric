@@ -14,6 +14,7 @@ from volatility.framework.configuration import requirements
 from volatility.framework.interfaces import configuration, renderers
 from volatility.framework.interfaces.configuration import HierarchicalDict
 from volatility.framework.renderers import ColumnSortKey
+from volumetric import jsonvol
 from volumetric.backqueue import BackgroundTaskQueue
 
 vollog = logging.getLogger('volatility')
@@ -161,12 +162,9 @@ class PluginsApi(object):
 
         def generator():
             def respond(item):
-                print("RESPONSE", item)
-                # TODO: Further differentiate between AbsentValues
-                for i in range(len(item['data'])):
-                    if isinstance(item['data'][i], renderers.BaseAbsentValue):
-                        item['data'][i] = "-"
-                return "retry: 1000\nevent: {}\ndata: {}\n\n".format(item['type'], json.dumps(item['data']))
+                return "retry: 1000\nevent: {}\ndata: {}\n\n".format(item['type'],
+                                                                     json.dumps(item['data'],
+                                                                                cls = jsonvol.JSONEncoder))
 
             jobs = cherrypy.session.get('jobs', {})
             if job_id not in jobs:
@@ -283,7 +281,7 @@ class ResultsApi(object):
         return list(jobs)
 
     @cherrypy.expose
-    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_out(handler = jsonvol.json_handler)
     def get(self, job_id, index = None, page_size = None, sort_property = None, sort_direction = None):
         if index is not None:
             index = json.loads(index)
