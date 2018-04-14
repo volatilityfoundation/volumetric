@@ -142,10 +142,15 @@ class PluginsApi(object):
                 if not isinstance(global_config.get(automagic_req['name'], []), list):
                     global_config[automagic_req['name']] = [global_config[automagic_req['name']]]
         for req in self.get_requirements(plugin):
-            if automagic_req['type'] == 'ListRequirement':
-                if not isinstance(plugin_config.get(automagic_req['name'], []), list):
-                    plugin_config[automagic_req['name']] = [plugin_config[automagic_req['name']]]
-
+            if req['type'] == 'ListRequirement':
+                if not isinstance(plugin_config.get(req['name'], []), list):
+                    plugin_config[req['name']] = [plugin_config[req['name']]]
+            if req['type'] == 'IntRequirement':
+                short_req_name = req['name'].split(configuration.CONFIG_SEPARATOR)[-1]
+                try:
+                    plugin_config[short_req_name] = int(plugin_config[short_req_name])
+                except TypeError:
+                    pass
         job = {'plugin': plugin,
                'automagics': json.loads(automagics),
                'global_config': global_config,
@@ -207,8 +212,10 @@ class PluginsApi(object):
                             else:
                                 yield respond(progress)
                                 break
-                        if (progress['type'] == 'config'):
+                        elif (progress['type'] == 'config'):
                             job['config'] = progress['data']
+                        elif (progress['type'] == 'files'):
+                            job['files'] = progress['data']
                         elif progress:
                             yield respond(progress)
                     except TimeoutError:
@@ -219,6 +226,14 @@ class PluginsApi(object):
         return generator()
 
     run_job._cp_config = {'response.stream': True, 'tools.encode.encoding': 'utf-8'}
+
+
+class FileConsumer(interfaces.plugins.FileConsumerInterface):
+    def __init__(self):
+        self.files = []
+
+    def consume_file(self, file: interfaces.plugins.FileInterface):
+        self.files.append(file)
 
 
 def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue):
@@ -248,8 +263,10 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
                             'data': {'message': 'Plugin requirements not satisfied'}})
         return None
 
+    consumer = FileConsumer()
     try:
         constructed = plugin(ctx, plugin_config_path)
+        constructed.set_file_consumer(consumer)
         progress_queue.put({'type': 'config',
                             'data': dict(constructed.build_configuration())})
         result = constructed.run()
@@ -265,6 +282,9 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
                             'data': {'message': 'Exception: {}'.format(e)}})
         return None
 
+    if consumer.files:
+        progress_queue.put({'type': 'files',
+                            'data': consumer.files})
     progress_queue.put({'type': 'finished',
                         'data': {'message': 'Complete'},
                         'result': result})
@@ -329,6 +349,36 @@ class ResultsApi(object):
         return {'size': job['result'].row_count,
                 'columns': [{'index': column.index, 'name': column.name, 'type': column.type.__name__} for column in
                             job['result'].columns]}
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def list_files(self, job_id):
+        """Lists files available from this job"""
+        jobs = cherrypy.session.get('jobs', {})
+        if (job_id not in jobs):
+            return []
+        job = jobs[job_id]
+        result = []
+        for file_index in range(len(job.get('files', []))):
+            filedata = job['files'][file_index]
+            result.append({'id': file_index, 'name': filedata.preferred_filename})
+        return result
+
+    @cherrypy.expose
+    def download_file(self, job_id, file_id):
+        """Downloads a generated file from a particular job"""
+        cherrypy.response.headers['Content-Type'] = 'application/octet-stream'
+        jobs = cherrypy.session.get('jobs', {})
+        if (job_id not in jobs):
+            return None
+        job = jobs[job_id]
+        files = job.get('files', [])
+        file_id = json.loads(file_id)
+        if file_id > len(files) or 0 > file_id:
+            return None
+        cherrypy.response.headers['Content-Disposition'] = "inline; filename=\"{}\" ".format(
+            files[file_id].preferred_filename)
+        return files[file_id].data.getvalue()
 
     @cherrypy.expose
     def download_config(self, job_id):

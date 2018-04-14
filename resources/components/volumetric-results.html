@@ -4,6 +4,8 @@
 <link rel="import" href="/resources/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="/resources/bower_components/paper-card/paper-card.html">
 <link rel="import" href="/resources/bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/resources/bower_components/paper-collapse-item/paper-collapse-item.html">
+<link rel="import" href="/resources/bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="/resources/bower_components/vaadin-grid/vaadin-grid.html">
 <link rel="import" href="/resources/bower_components/vaadin-grid/vaadin-grid-sorter.html">
 
@@ -28,6 +30,8 @@
 
         <iron-ajax id="getResultMetadata" url="/api/results/metadata" last-response="{{metadata}}"></iron-ajax>
         <iron-ajax id="getResultPage" url="/api/results/get?job_id=[[jobId]]"></iron-ajax>
+        <iron-ajax id="getResultFiles" url="/api/results/list_files?job_id=[[jobId]]"
+                   last-response="{{filesData}}"></iron-ajax>
 
         <paper-card id="displayCard" heading="Processing...">
             <div class="card-content">
@@ -59,12 +63,28 @@
                         </template>
                     </vaadin-grid>
                 </iron-pages>
+
+                <template is="dom-if" if="[[filesData.length]]">
+                    <hr>
+                    <paper-collapse-item header="Associated Files">
+                        <paper-listbox>
+                            <template is="dom-repeat" items="[[filesData]]" as="item">
+                                <paper-item>
+                                    <a href="/api/results/download_file?job_id=[[jobId]]&file_id=[[item.id]]"
+                                       target="_blank">
+                                        {{item.name}}
+                                    </a>
+                                </paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-collapse-item>
+                </template>
             </div>
             <div class="card-actions">
-                <a href="/api/results/download_config?job_id=[[jobId]]" target="_blank" border="0">
+                <a href="/api/results/download_config?job_id=[[jobId]]" target="_blank">
                     <paper-icon-button icon="icons:restore-page"></paper-icon-button>
                 </a>
-                <a href="/api/results/download_results?job_id=[[jobId]]" target="_blank" border="0">
+                <a href="/api/results/download_results?job_id=[[jobId]]" target="_blank">
                     <paper-icon-button icon="icons:file-download"></paper-icon-button>
                 </a>
             </div>
@@ -97,6 +117,11 @@
                 'jobId': {
                     type: String,
                     notify: true
+                },
+                'filesData': {
+                    type: Object,
+                    notify: true,
+                    value: []
                 }
             }
         }
@@ -123,6 +148,7 @@
         }
 
         buildGrid() {
+            this.$.getResultFiles.generateRequest();
             this.$.resultView.selected = 1;
             let getResultPage = this.$.getResultPage;
             let getResultMetadata = this.$.getResultMetadata;
