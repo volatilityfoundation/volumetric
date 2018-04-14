@@ -17,6 +17,8 @@ from volatility.framework.renderers import ColumnSortKey
 from volumetric import jsonvol
 from volumetric.backqueue import BackgroundTaskQueue
 
+logging.basicConfig(filename = 'logs.txt', level = 0)
+
 vollog = logging.getLogger('volatility')
 vollog.setLevel(0)
 
