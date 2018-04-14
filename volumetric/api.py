@@ -233,6 +233,7 @@ class FileConsumer(interfaces.plugins.FileConsumerInterface):
         self.files = []
 
     def consume_file(self, file: interfaces.plugins.FileInterface):
+        # TODO: Consider writing these to disk to free up memory
         self.files.append(file)
 
 

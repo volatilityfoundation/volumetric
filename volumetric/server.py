@@ -29,6 +29,8 @@ class VolumetricServer(object):
         return parser
 
     def run(self):
+        # TODO: Convert to gunicorn or something with better asynchronicity
+
         configuration = {'server.socket_port': self.port,
                          'server.thread_pool': self.thread_pool_size,
                          'tools.sessions.locking': 'explicit',
