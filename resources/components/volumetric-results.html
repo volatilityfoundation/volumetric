@@ -53,12 +53,21 @@
                         </table>
                     </div>
                     <vaadin-grid id="grid">
-                        <template is="dom-repeat" items="[[getColumns(metadata)]]" as="column">
+                        <template is="dom-repeat" items="[[metadata.columns]]" as="column">
                             <vaadin-grid-column>
                                 <template class="header">
-                                    <vaadin-grid-sorter path="[[column]]">[[column]]</vaadin-grid-sorter>
+                                    <vaadin-grid-sorter path="[[column.name]]">[[column.name]]</vaadin-grid-sorter>
                                 </template>
-                                <template>[[getItem(column,item)]]</template>
+                                <template>
+                                    <template is="dom-if" if="[[isColumnType(column.type, 'Disassembly')]]">
+                                        <paper-collapse-item header="Disassembly">
+                                            [[getItem(column.name,item)]]
+                                        </paper-collapse-item>
+                                    </template>
+                                    <template is="dom-if" if="[[isDefaultType(column.type)]]">
+                                        [[getItem(column.name,item)]]
+                                    </template>
+                                </template>
                             </vaadin-grid-column>
                         </template>
                     </vaadin-grid>
@@ -127,11 +136,7 @@
         }
 
         getColumns(metadata) {
-            let result = [];
-            for (let index = 0; index < this.metadata.columns.length; index++) {
-                result.push(this.metadata.columns[index].name);
-            }
-            return result;
+            return metadata.columns;
         }
 
         getColumnName(item) {
@@ -145,6 +150,20 @@
         clearPartialResults() {
             this.set('partialColumns', []);
             this.set('partialData', []);
+        }
+
+
+        isColumnType(column_type, desired_type) {
+            return column_type == desired_type;
+        }
+
+        isDefaultType(column_type) {
+            if (column_type == 'Disassembly') {
+                return false;
+            } else if (column_type == 'boolean') {
+                return false;
+            }
+            return true;
         }
 
         buildGrid() {
