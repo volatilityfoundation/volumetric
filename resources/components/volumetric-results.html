@@ -3,6 +3,7 @@
 <link rel="import" href="/resources/bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="/resources/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="/resources/bower_components/paper-card/paper-card.html">
+<link rel="import" href="/resources/bower_components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="/resources/bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="/resources/bower_components/paper-collapse-item/paper-collapse-item.html">
 <link rel="import" href="/resources/bower_components/paper-listbox/paper-listbox.html">
@@ -25,6 +26,11 @@
       .constrained {
           width: 100%;
           overflow: auto;
+      }
+
+      .tree_indicator {
+          background-color: #0d47a1;
+          position: absolute;
       }
     </style>
 
@@ -53,6 +59,13 @@
                         </table>
                     </div>
                     <vaadin-grid id="grid">
+                        <vaadin-grid-column width="1px">
+                            <template class="header"></template>
+                            <template>
+                                <div style$="width:[[getTreeIndicatorWidth(item)]]px;" class="tree_indicator">&nbsp;
+                                </div>
+                            </template>
+                        </vaadin-grid-column>
                         <template is="dom-repeat" items="[[metadata.columns]]" as="column">
                             <vaadin-grid-column>
                                 <template class="header">
@@ -63,6 +76,10 @@
                                         <paper-collapse-item header="Disassembly">
                                             [[getItem(column.name,item)]]
                                         </paper-collapse-item>
+                                    </template>
+                                    <template is="dom-if" if="[[isColumnType(column.type, 'bool')]]">
+                                        <paper-checkbox checked="[[getItem(column.name, item)]]"
+                                                        disabled></paper-checkbox>
                                     </template>
                                     <template is="dom-if" if="[[isDefaultType(column.type)]]">
                                         [[getItem(column.name,item)]]
@@ -80,7 +97,7 @@
                             <template is="dom-repeat" items="[[filesData]]" as="item">
                                 <paper-item>
                                     <a href="/api/results/download_file?job_id=[[jobId]]&file_id=[[item.id]]"
-                                       target="_blank">
+                                       target="_blank" border=0>
                                         {{item.name}}
                                     </a>
                                 </paper-item>
@@ -90,10 +107,10 @@
                 </template>
             </div>
             <div class="card-actions">
-                <a href="/api/results/download_config?job_id=[[jobId]]" target="_blank">
+                <a href="/api/results/download_config?job_id=[[jobId]]" target="_blank" border=0>
                     <paper-icon-button icon="icons:restore-page"></paper-icon-button>
                 </a>
-                <a href="/api/results/download_results?job_id=[[jobId]]" target="_blank">
+                <a href="/api/results/download_results?job_id=[[jobId]]" target="_blank" border=0>
                     <paper-icon-button icon="icons:file-download"></paper-icon-button>
                 </a>
             </div>
@@ -160,7 +177,7 @@
         isDefaultType(column_type) {
             if (column_type == 'Disassembly') {
                 return false;
-            } else if (column_type == 'boolean') {
+            } else if (column_type == 'bool') {
                 return false;
             }
             return true;
@@ -217,6 +234,11 @@
                 return item[column.toLowerCase()];
             }
             return null;
+        }
+
+        getTreeIndicatorWidth(item) {
+            var width = Math.max(0, this.getItem('depth', item) - 1);
+            return width * 10;
         }
     }
 
