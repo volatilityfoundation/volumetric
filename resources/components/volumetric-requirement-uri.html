@@ -1,0 +1,59 @@
+<link rel="import" href="/resources/bower_components/polymer/polymer-element.html">
+<link rel="import" href="/resources/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="/resources/bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="/resources/bower_components/iron-form/iron-form.html">
+<link rel="import" href="/resources/bower_components/neon-animation/neon-animated-pages.html">
+<link rel="import" href="/resources/bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="/resources/bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/resources/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/resources/bower_components/paper-item/paper-item.html">
+
+<dom-module id="volumetric-requirement-uri">
+    <template>
+        <style is="custom-style" include="iron-flex iron-flex-alignment"></style>
+        <iron-pages id="URIpages" selected="0">
+            <iron-page>
+                <div class="layout horizontal">
+                    <paper-icon-button icon="language" class="layout self-center" on-tap="toggle"></paper-icon-button>
+                    <paper-input class="layout flex"
+                                 label="{{_friendlyName(element.name)}} ({{element.description}})"
+                                 value="{{element.default}}" name="vol_{{element.name}}"
+                                 auto-validate="true"
+                                 required="{{!element.optional}}"
+                                 error-message="Invalid value"></paper-input>
+                </div>
+            </iron-page>
+            <iron-page>
+                <paper-icon-button icon="file-upload" on-tap="toggle"></paper-icon-button>
+            </iron-page>
+        </iron-pages>
+    </template>
+
+    <script>
+        class VolumetricRequirementURI extends Polymer.Element {
+            static get is() {
+                return 'volumetric-requirement-uri';
+            }
+
+            static get properties() {
+                return {
+                    'element': {
+                        type: Object,
+                        notify: true
+                    }
+                }
+            }
+
+            toggle() {
+                // keep this as % 1 until we get the file upload functionality working
+                this.$.URIpages.selected = (this.$.URIpages.selected + 1) % 1;
+            }
+
+            _friendlyName(name) {
+                return name.substring(name.lastIndexOf('.') + 1, name.length)
+            }
+        }
+
+        window.customElements.define(VolumetricRequirementURI.is, VolumetricRequirementURI);
+    </script>
+</dom-module>

@@ -8,6 +8,7 @@
 <link rel="import" href="/resources/bower_components/paper-input/paper-input.html">
 <link rel="import" href="/resources/components/volumetric-requirement-boolean.html">
 <link rel="import" href="/resources/components/volumetric-requirement-string.html">
+<link rel="import" href="/resources/components/volumetric-requirement-uri.html">
 <link rel="import" href="/resources/components/volumetric-requirement-list.html">
 
 <dom-module id="volumetric-requirement-editor">
@@ -27,6 +28,9 @@
             </template>
             <template is="dom-if" if="{{is_type(item.type, 'StringRequirement')}}">
                 <volumetric-requirement-string element="{{item}}"></volumetric-requirement-string>
+            </template>
+            <template is="dom-if" if="{{is_type(item.type, 'URIRequirement')}}">
+                <volumetric-requirement-uri element="{{item}}"></volumetric-requirement-uri>
             </template>
             <template is="dom-if" if="{{is_type(item.type, 'ListRequirement')}}">
                 <volumetric-requirement-list element="{{item}}"></volumetric-requirement-list>
