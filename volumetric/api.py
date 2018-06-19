@@ -3,6 +3,7 @@ import hashlib
 import io
 import json
 import logging
+import os
 import queue
 
 import cherrypy
@@ -227,6 +228,31 @@ class PluginsApi(object):
         return generator()
 
     run_job._cp_config = {'response.stream': True, 'tools.encode.encoding': 'utf-8'}
+
+    def sanitize(self, text):
+        output = ""
+        for char in text:
+            if char in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.':
+                output += char
+            else:
+                output += '_'
+        return output
+
+    @cherrypy.expose
+    def upload(self, uploaded):
+        fileval = uploaded.file.read()
+        dirname = os.path.join(os.path.dirname(__file__), '..', 'uploads')
+        filename = os.path.join(dirname, "{}".format(self.sanitize(uploaded.filename)))
+
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        count = 0
+        while os.path.exists(filename + ".{}.dat".format(count)):
+            count += 1
+
+        with open(filename + ".{}.dat".format(count), 'wb') as f:
+            f.write(fileval)
 
 
 class FileConsumer(interfaces.plugins.FileConsumerInterface):

@@ -7,6 +7,7 @@
 <link rel="import" href="/resources/bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="/resources/bower_components/paper-input/paper-input.html">
 <link rel="import" href="/resources/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/resources/bower_components/vaadin-upload/vaadin-upload.html">
 
 <dom-module id="volumetric-requirement-uri">
     <template>
@@ -24,7 +25,10 @@
                 </div>
             </iron-page>
             <iron-page>
-                <paper-icon-button icon="file-upload" on-tap="toggle"></paper-icon-button>
+                <div class="layout horizontal">
+                    <paper-icon-button icon="file-upload" on-tap="toggle"></paper-icon-button>
+                    <vaadin-upload></vaadin-upload>
+                </div>
             </iron-page>
         </iron-pages>
     </template>
@@ -46,7 +50,7 @@
 
             toggle() {
                 // keep this as % 1 until we get the file upload functionality working
-                this.$.URIpages.selected = (this.$.URIpages.selected + 1) % 1;
+                this.$.URIpages.selected = (this.$.URIpages.selected + 1) % 2;
             }
 
             _friendlyName(name) {
