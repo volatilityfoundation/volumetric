@@ -91,7 +91,8 @@ class PluginsApi(object):
     @classmethod
     def get_plugins(cls):
         volatility.plugins.__path__ = cherrypy.session.get('plugin_dir', '').split(";") + constants.PLUGINS_PATH
-        volatility.framework.import_files(volatility.plugins)  # Will not log as console's default level is WARNING
+        failures = volatility.framework.import_files(volatility.plugins,
+                                                     True)  # Will not log as console's default level is WARNING
         if cherrypy.session.get('plugins', None):
             return cherrypy.session.get('plugins', None)
         plugin_list = {}
