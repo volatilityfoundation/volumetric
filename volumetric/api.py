@@ -76,7 +76,7 @@ class AutomagicApi(object):
         result = []
         for amagic in self.get_automagics():
             for req in amagic.get_requirements():
-                if isinstance(req, (configuration.InstanceRequirement, requirements.ListRequirement)):
+                if isinstance(req, (configuration.SimpleTypeRequirement, requirements.ListRequirement)):
                     automagic_config_path = interfaces.configuration.path_join('automagic', amagic.__class__.__name__)
                     reqment = {'name': automagic_config_path + '.' + req.name,
                                'description': req.description,
@@ -122,7 +122,7 @@ class PluginsApi(object):
         plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
         reqs = []
         for req in plugin.get_requirements():
-            if isinstance(req, configuration.InstanceRequirement):
+            if isinstance(req, configuration.SimpleTypeRequirement):
                 reqment = {'name': plugin_config_path + '.' + req.name,
                            'description': req.description,
                            'default': req.default,
