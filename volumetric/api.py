@@ -111,7 +111,7 @@ class PluginsApi(object):
         """List the available plugins"""
         plugin_list = self.get_plugins()
 
-        return [name for name in plugin_list]
+        return [(name, plugin_list[name].__doc__) for name in plugin_list]
 
     @cherrypy.expose
     @cherrypy.tools.json_out()

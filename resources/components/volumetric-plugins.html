@@ -31,7 +31,11 @@
                 <paper-collapse-item header="[[item]]">
                     <paper-listbox>
                         <template is="dom-repeat" items="[[_filtered(items, item)]]" as="subitem">
-                            <paper-item value="{{subitem}}" on-tap="_select_plugin">{{_friendly_name(subitem)}}
+                            <paper-item value="{{subitem}}" on-tap="_select_plugin">
+                                <paper-item-body two-line>
+                                    <div>{{_friendly_name(subitem)}}</div>
+                                    <div secondary>{{_description(subitem)}}</div>
+                                </paper-item-body>
                             </paper-item>
                         </template>
                     </paper-listbox>
@@ -61,14 +65,18 @@
             }
         }
 
+        _description(item) {
+            return item[1];
+        }
+
         _friendly_name(item) {
-            return item.substring(item.lastIndexOf(".") + 1, item.length);
+            return item[0].substring(item[0].lastIndexOf(".") + 1, item[0].length);
         }
 
         _filtered(items, item) {
             let result = [];
             for (let i = 0; i < items.length; i++) {
-                if (items[i].substring(0, item.length) === item) {
+                if (items[i][0].substring(0, item.length) === item) {
                     result.push(items[i]);
                 }
             }
@@ -97,7 +105,7 @@
             let result = [];
             if (items !== null) {
                 for (let i = 0; i < items.length; i++) {
-                    let top_level = items[i].substring(0, items[i].indexOf("."));
+                    let top_level = items[i][0].substring(0, items[i][0].indexOf("."));
                     if (result[result.length - 1] != top_level) {
                         result.push(top_level);
                     }
