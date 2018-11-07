@@ -7,11 +7,11 @@
  Code distributed by Google as part of the polymer project is also
  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
  */
-import {Element} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
+import {PolymerElement} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
 
 import {html} from '/resources/node_modules/@polymer/polymer/lib/utils/html-tag.js';
 
-class Volumetric404 extends Element {
+class Volumetric404 extends PolymerElement {
     static get template() {
         return html`
     <style>

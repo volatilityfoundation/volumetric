@@ -1,4 +1,4 @@
-import {Element} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
+import {PolymerElement} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
 import '/resources/node_modules/paper-collapse-item/paper-collapse-item.js';
 import '/resources/node_modules/@polymer/paper-listbox/paper-listbox.js';
 import '/resources/node_modules/@polymer/paper-item/paper-item.js';
@@ -6,7 +6,7 @@ import '/resources/node_modules/@polymer/paper-card/paper-card.js';
 import '/resources/node_modules/@polymer/iron-ajax/iron-ajax.js';
 import {html} from '../node_modules/@polymer/polymer/lib/utils/html-tag.js';
 
-class VolumetricPlugins extends Element {
+class VolumetricPlugins extends PolymerElement {
     static get template() {
         return html`
     <style>

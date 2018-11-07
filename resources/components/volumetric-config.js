@@ -1,4 +1,4 @@
-import {Element} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
+import {PolymerElement} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
 import '/resources/node_modules/@polymer/iron-flex-layout/iron-flex-layout-classes.js';
 import '/resources/node_modules/@polymer/iron-ajax/iron-ajax.js';
 import '/resources/node_modules/@polymer/iron-form/iron-form.js';
@@ -16,7 +16,7 @@ import '/resources/components/volumetric-requirement-editor.js';
 import '/resources/components/volumetric-requirement-string.js';
 import {html} from '/resources/node_modules/@polymer/polymer/lib/utils/html-tag.js';
 
-class VolumetricConfig extends Element {
+class VolumetricConfig extends PolymerElement {
     static get template() {
         return html`
     <style is="custom-style" include="iron-flex iron-flex-alignment">

@@ -1,4 +1,4 @@
-import {Element} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
+import {PolymerElement} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
 import '/resources/node_modules/@polymer/iron-flex-layout/iron-flex-layout-classes.js';
 import '/resources/node_modules/@polymer/iron-ajax/iron-ajax.js';
 import '/resources/node_modules/@polymer/iron-form/iron-form.js';
@@ -8,7 +8,7 @@ import '/resources/node_modules/@polymer/paper-input/paper-input.js';
 import '/resources/node_modules/@polymer/paper-item/paper-item.js';
 import {html} from '../node_modules/@polymer/polymer/lib/utils/html-tag.js';
 
-class VolumetricRequirementString extends Element {
+class VolumetricRequirementString extends PolymerElement {
     static get template() {
         return html`
         <paper-input label="{{_friendlyName(element.name)}} ({{element.description}})" value="{{element.default}}" name="vol_{{element.name}}" auto-validate="true" required="{{!element.optional}}" error-message="Invalid value"></paper-input>

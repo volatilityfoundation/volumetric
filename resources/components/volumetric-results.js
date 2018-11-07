@@ -1,4 +1,4 @@
-import {Element} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
+import {PolymerElement} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
 import '/resources/node_modules/@polymer/iron-ajax/iron-ajax.js';
 import '/resources/node_modules/@polymer/iron-pages/iron-pages.js';
 import '/resources/node_modules/@polymer/iron-flex-layout/iron-flex-layout-classes.js';
@@ -11,7 +11,7 @@ import '/resources/node_modules/@vaadin/vaadin-grid/vaadin-grid.js';
 import '/resources/node_modules/@vaadin/vaadin-grid/vaadin-grid-sorter.js';
 import {html} from '../node_modules/@polymer/polymer/lib/utils/html-tag.js';
 
-class VolumetricResults extends Element {
+class VolumetricResults extends PolymerElement {
     static get template() {
         return html`
     <style>

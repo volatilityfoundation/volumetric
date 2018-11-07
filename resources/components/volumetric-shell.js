@@ -1,4 +1,4 @@
-import {Element} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
+import {PolymerElement} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
 import '/resources/node_modules/@polymer/iron-flex-layout/iron-flex-layout-classes.js';
 import '/resources/node_modules/@polymer/app-layout/app-header/app-header.js';
 import '/resources/node_modules/@polymer/app-layout/app-header-layout/app-header-layout.js';
@@ -19,7 +19,7 @@ import {html} from '/resources/node_modules/@polymer/polymer/lib/utils/html-tag.
  * @customElement
  * @polymer
  */
-class VolumetricShell extends Element {
+class VolumetricShell extends PolymerElement {
     static get template() {
         return html`
         <style is="custom-style" include="iron-flex iron-flex-alignment">
@@ -137,12 +137,8 @@ class VolumetricShell extends Element {
 
     _pageChanged(page) {
         // Load page import on demand. Show 404 page if fails
-        let resolvedPageUrl = this.resolveUrl('volumetric-' + page + '.html');
-        importHref(
-            resolvedPageUrl,
-            null,
-            this._showPage404.bind(this),
-            true);
+        let resolvedPageUrl = this.resolveUrl('/resources/components/volumetric-' + page + '.js');
+        import(resolvedPageUrl).then(null, this._showPage404.bind(this));
         if (page == 'plugins') {
             this.status = '';
             this.$.progressBar.classList.remove("error");

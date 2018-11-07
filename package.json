@@ -36,9 +36,12 @@
     "@vaadin/vaadin-grid": "^5.2.2",
     "@vaadin/vaadin-upload": "^4.2.1",
     "@webcomponents/webcomponentsjs": "^2.1.3",
-    "npm": "^6.4.1",
-    "paper-collapse-item": "^4.0.4",
-    "vaadin-grid": "^4.0.0-beta1"
+    "paper-collapse-item": "^4.0.4"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@0xcda7a/empathy": "^0.0.9"
+  },
+  "scripts": {
+    "postinstall": "empathy install -a resources/node_modules"
+  }
 }
