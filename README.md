@@ -7,7 +7,7 @@ Volumetric is a web-based GUI for the volatility3 library.
 Volumetric relies upon the following:
 
 * npm (for webcomponents)
-* >=cherrypy-10  (for serving the pages)
+* &gt;=cherrypy-10  (for serving the pages)
 * volatility3
 
 # Installation
