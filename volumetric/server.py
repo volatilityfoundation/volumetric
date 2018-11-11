@@ -11,7 +11,7 @@ basedir = os.path.dirname(os.path.dirname(__file__))
 
 class VolumetricServer(object):
     def __init__(self, arguments):
-        self.debug = arguments.debug
+        self.quiet = arguments.quiet
         self.ssl = arguments.ssl
         self.port = arguments.port
         self.thread_pool_size = 10  # arguments.thread_pool_size or 100
@@ -21,7 +21,7 @@ class VolumetricServer(object):
     @classmethod
     def get_argument_parser(cls):
         parser = argparse.ArgumentParser()
-        parser.add_argument("-d", "--debug", action = "store_true", help = "Enable debugging information",
+        parser.add_argument("-q", "--quiet", action = "store_true", help = "Disable debugging output",
                             default = False)
         parser.add_argument("-s", "--ssl", action = "store_true", help = "Enable SSL for the server", default = False)
         parser.add_argument("-p", "--port", metavar = "PORT", type = int, help = "Port on which the server will run",
@@ -35,7 +35,7 @@ class VolumetricServer(object):
                          'server.thread_pool': self.thread_pool_size,
                          'tools.sessions.locking': 'explicit',
                          'tools.sessions.on': True}
-        if not self.debug:
+        if self.quiet:
             configuration.update({'environment': 'production'})
 
         cherrypy.config.update(configuration)

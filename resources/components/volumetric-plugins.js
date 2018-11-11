@@ -29,20 +29,22 @@ class VolumetricPlugins extends PolymerElement {
 
 
         <paper-card heading="Available Plugins">
-            <template is="dom-repeat" items="[[_top_level(items)]]">
-                <paper-collapse-item header="[[item]]">
-                    <paper-listbox>
-                        <template is="dom-repeat" items="[[_filtered(items, item)]]" as="subitem">
-                            <paper-item value="{{subitem}}" on-tap="_select_plugin">
-                                <paper-item-body two-line="">
-                                    <div>{{_friendly_name(subitem)}}</div>
-                                    <div secondary="">{{_description(subitem)}}</div>
-                                </paper-item-body>
-                            </paper-item>
-                        </template>
-                    </paper-listbox>
-                </paper-collapse-item>
-            </template>
+            <paper-listbox>
+                <template is="dom-repeat" items="[[_top_level(items)]]">
+                    <paper-collapse-item header="[[item]]">
+                        <paper-listbox>
+                            <template is="dom-repeat" items="[[_filtered(items, item)]]" as="subitem">
+                                <paper-item value="{{_plugin_name(subitem)}}" on-tap="_select_plugin">
+                                    <paper-item-body two-line="">
+                                        <div>{{_friendly_name(subitem)}}</div>
+                                        <div secondary="">{{_description(subitem)}}</div>
+                                    </paper-item-body>
+                                </paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-collapse-item>
+                </template>
+            </paper-listbox>
         </paper-card>
 `;
     }
@@ -89,8 +91,16 @@ class VolumetricPlugins extends PolymerElement {
         }
     }
 
+    _plugin_name(pair) {
+        return pair[0];
+    }
+
     _select_plugin(e) {
-        this.plugin = e.target.value;
+        var element = e.target;
+        while (element.value === undefined) {
+            element = element.parentElement;
+        }
+        this.plugin = element.value;
         this.page = 'config';
         console.log("Plugin selected: " + this.plugin);
     }
