@@ -118,6 +118,8 @@ class PluginsApi(object):
     def get_requirements(self, plugin_name):
         """Returns a JSON object containing requirements"""
         plugin_list = self.get_plugins()
+        if plugin_name not in plugin_list:
+            return None
         plugin = plugin_list[plugin_name]
         plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
         reqs = []
