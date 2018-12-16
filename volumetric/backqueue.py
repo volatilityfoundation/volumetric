@@ -44,8 +44,7 @@ class BackgroundTaskQueue(SimplePlugin):
                     if hasattr(self.q, 'task_done'):
                         self.q.task_done()
             except:
-                self.bus.log("Error in BackgroundTaskQueue %r." % self,
-                             level = 40, traceback = True)
+                self.bus.log("Error in BackgroundTaskQueue %r." % self, level = 40, traceback = True)
 
     def put(self, func, *args, **kwargs):
         """Schedule the given func to be run."""

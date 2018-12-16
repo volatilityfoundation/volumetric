@@ -7,6 +7,7 @@ from volatility.framework import interfaces, renderers
 
 
 class JSONEncoder(json.JSONEncoder):
+
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()

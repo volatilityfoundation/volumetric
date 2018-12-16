@@ -10,6 +10,7 @@ basedir = os.path.dirname(os.path.dirname(__file__))
 
 
 class VolumetricServer(object):
+
     def __init__(self, arguments):
         self.quiet = arguments.quiet
         self.ssl = arguments.ssl
@@ -21,29 +22,33 @@ class VolumetricServer(object):
     @classmethod
     def get_argument_parser(cls):
         parser = argparse.ArgumentParser()
-        parser.add_argument("-q", "--quiet", action = "store_true", help = "Disable debugging output",
-                            default = False)
+        parser.add_argument("-q", "--quiet", action = "store_true", help = "Disable debugging output", default = False)
         parser.add_argument("-s", "--ssl", action = "store_true", help = "Enable SSL for the server", default = False)
-        parser.add_argument("-p", "--port", metavar = "PORT", type = int, help = "Port on which the server will run",
-                            default = 8000)
+        parser.add_argument(
+            "-p", "--port", metavar = "PORT", type = int, help = "Port on which the server will run", default = 8000)
         return parser
 
     def run(self):
         # TODO: Convert to gunicorn or something with better asynchronicity
 
-        configuration = {'server.socket_port': self.port,
-                         'server.thread_pool': self.thread_pool_size,
-                         'tools.sessions.locking': 'explicit',
-                         'tools.sessions.on': True}
+        configuration = {
+            'server.socket_port': self.port,
+            'server.thread_pool': self.thread_pool_size,
+            'tools.sessions.locking': 'explicit',
+            'tools.sessions.on': True
+        }
         if self.quiet:
             configuration.update({'environment': 'production'})
 
         cherrypy.config.update(configuration)
 
-        site_config = {'/': {},
-                       '/resources': {'tools.staticdir.on': True,
-                                      'tools.staticdir.dir': os.path.join(
-                                          os.path.dirname(os.path.dirname(__file__)), 'resources')}}
+        site_config = {
+            '/': {},
+            '/resources': {
+                'tools.staticdir.on': True,
+                'tools.staticdir.dir': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'resources')
+            }
+        }
 
         cherrypy.quickstart(self, '/', site_config)
 
