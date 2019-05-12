@@ -360,7 +360,8 @@ class ResultsApi(object):
 
     @cherrypy.expose
     @cherrypy.tools.json_out(handler = jsonvol.json_handler)
-    def get(self, job_id, index = None, page_size = None, sort_property = None, sort_direction = None):
+    def get(self, job_id, index = None, page_size = None, parent_row_id = None, sort_property = None,
+            sort_direction = None):
         if index is not None:
             index = json.loads(index)
         if page_size is not None:
@@ -369,6 +370,8 @@ class ResultsApi(object):
             sort_property = sort_property
         if sort_direction is not None:
             sort_direction = (sort_direction.lower() == 'asc')
+        if parent_row_id == '':
+            parent_row_id = None
         jobs = cherrypy.session.get('jobs', {})
         if (job_id not in jobs):
             return None
@@ -382,13 +385,18 @@ class ResultsApi(object):
             sort_key = ColumnSortKey(result, sort_property, sort_direction)
 
         def visitor(node, accumulator):
-            item_dict = {'depth': result.path_depth(node)}
+            # We append "h" to ensure the value is treated as a string when it's returned to python
+            item_dict = {'volumetric_id': "h" + str(node.__hash__()),
+                         'volumetric_parent': ("h" + str(node.parent.__hash__())) if node.parent else None,
+                         'hasChildren': bool(result.children(node))}
             item_dict.update(dict(node.values._asdict()))
             for key, value in item_dict.items():
                 if isinstance(value, renderers.BaseAbsentValue):
                     # TODO: Further differentiate between AbsentValues
                     item_dict[key] = "-"
-            accumulator.append(item_dict)
+            if ((node.parent is None and parent_row_id is None) or
+                    (node.parent and "h" + str(node.parent.__hash__()) == parent_row_id)):
+                accumulator.append(item_dict)
             return accumulator
 
         return list(

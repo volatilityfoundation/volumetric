@@ -9,6 +9,7 @@ import '/resources/node_modules/paper-collapse-item/paper-collapse-item.js';
 import '/resources/node_modules/@polymer/paper-listbox/paper-listbox.js';
 import '/resources/node_modules/@vaadin/vaadin-grid/vaadin-grid.js';
 import '/resources/node_modules/@vaadin/vaadin-grid/vaadin-grid-sorter.js';
+import '/resources/node_modules/@vaadin/vaadin-grid/vaadin-grid-tree-column.js';
 import {html} from '../node_modules/@polymer/polymer/lib/utils/html-tag.js';
 
 class VolumetricResults extends PolymerElement {
@@ -60,29 +61,39 @@ class VolumetricResults extends PolymerElement {
                         </tbody></table>
                     </div>
                     <vaadin-grid id="grid">
-                        <vaadin-grid-column width="1px">
-                            <template class="header"></template>
-                            <template>
-                                <div style\$="width:[[getTreeIndicatorWidth(item)]]px;" class="tree_indicator">&nbsp;
-                                </div>
-                            </template>
-                        </vaadin-grid-column>
                         <template is="dom-repeat" items="[[metadata.columns]]" as="column">
                             <vaadin-grid-column>
                                 <template class="header">
                                     <vaadin-grid-sorter path="[[column.name]]">[[column.name]]</vaadin-grid-sorter>
                                 </template>
                                 <template>
-                                    <template is="dom-if" if="[[isColumnType(column.type, 'Disassembly')]]">
-                                        <paper-collapse-item header="Disassembly">
+                                    <template is="dom-if" if="[[isZero(column.index)]]">
+                                        <vaadin-grid-tree-toggle leaf="[[!item.hasChildren]]" expanded="{{expanded}}" level="[[level]]">
+                                            <template is="dom-if" if="[[isColumnType(column.type, 'Disassembly')]]">
+                                                <paper-collapse-item header="Disassembly">
+                                                    [[getItem(column.name,item)]]
+                                                </paper-collapse-item>
+                                            </template>
+                                            <template is="dom-if" if="[[isColumnType(column.type, 'bool')]]">
+                                                <paper-checkbox checked="[[getItem(column.name, item)]]" disabled=""></paper-checkbox>
+                                            </template>
+                                            <template is="dom-if" if="[[isDefaultType(column.type)]]">
+                                                [[getItem(column.name,item)]]
+                                            </template>
+                                        </vaadin-grid-tree-toggle>
+                                    </template>
+                                    <template is="dom-if" if="[[!isZero(column.index)]]">
+                                        <template is="dom-if" if="[[isColumnType(column.type, 'Disassembly')]]">
+                                            <paper-collapse-item header="Disassembly">
+                                                [[getItem(column.name,item)]]
+                                            </paper-collapse-item>
+                                        </template>
+                                        <template is="dom-if" if="[[isColumnType(column.type, 'bool')]]">
+                                            <paper-checkbox checked="[[getItem(column.name, item)]]" disabled=""></paper-checkbox>
+                                        </template>
+                                        <template is="dom-if" if="[[isDefaultType(column.type)]]">
                                             [[getItem(column.name,item)]]
-                                        </paper-collapse-item>
-                                    </template>
-                                    <template is="dom-if" if="[[isColumnType(column.type, 'bool')]]">
-                                        <paper-checkbox checked="[[getItem(column.name, item)]]" disabled=""></paper-checkbox>
-                                    </template>
-                                    <template is="dom-if" if="[[isDefaultType(column.type)]]">
-                                        [[getItem(column.name,item)]]
+                                        </template>
                                     </template>
                                 </template>
                             </vaadin-grid-column>
@@ -145,6 +156,10 @@ class VolumetricResults extends PolymerElement {
                 type: Object,
                 notify: true,
                 value: []
+            },
+            'expanded': {
+                type: Boolean,
+                notify: true
             }
         }
     }
@@ -166,6 +181,9 @@ class VolumetricResults extends PolymerElement {
         this.set('partialData', []);
     }
 
+    isZero(index) {
+        return index === 0;
+    }
 
     isColumnType(column_type, desired_type) {
         return column_type == desired_type;
@@ -197,23 +215,26 @@ class VolumetricResults extends PolymerElement {
         grid.size = 0;
         grid.dataProvider = function(params, callback) {
             getResultPage.addEventListener('response', function() {
-                if (getResultPage.lastResponse != undefined && getResultPage.lastResponse != null) {
+                if (getResultPage.lastResponse) {
                     displayCard.heading = "Results";
-                    callback(getResultPage.lastResponse);
+                    callback(getResultPage.lastResponse, getResultPage.lastResponse.length);
                 } else {
                     callback([]);
                 }
             }, {once: true});
 
+            let parentId = params.parentItem ? params.parentItem['volumetric_id'] : null;
             if (params.sortOrders === undefined || params.sortOrders.length < 1) {
                 getResultPage.params = {
                     'index': params.page,
-                    'page_size': params.pageSize
+                    'page_size': params.pageSize,
+                    'parent_row_id': parentId
                 };
             } else {
                 getResultPage.params = {
                     'index': params.page,
                     'page_size': params.pageSize,
+                    'parent_row_id': parentId,
                     'sort_property': params.sortOrders[0].path,
                     'sort_direction': params.sortOrders[0].direction
                 };
