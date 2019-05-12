@@ -24,6 +24,7 @@ import json
 import logging
 import os
 import queue
+from typing import List, Tuple, Dict, Type, Generator
 
 import cherrypy
 
@@ -42,12 +43,12 @@ logging.basicConfig(filename = 'logs.txt', level = 0)
 vollog = logging.getLogger('volatility')
 vollog.setLevel(0)
 
-file_logger = logging.FileHandler('logs.txt')
-file_logger.setLevel(0)
-file_formatter = logging.Formatter(
-    datefmt = '%y-%m-%d %H:%M:%S', fmt = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-file_logger.setFormatter(file_formatter)
-vollog.addHandler(file_logger)
+# file_logger = logging.FileHandler('logs.txt')
+# file_logger.setLevel(0)
+# file_formatter = logging.Formatter(
+#     datefmt = '%y-%m-%d %H:%M:%S', fmt = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+# file_logger.setFormatter(file_formatter)
+# vollog.addHandler(file_logger)
 vollog.info("Logging started")
 
 framework.require_interface_version(0, 0, 0)
@@ -64,11 +65,14 @@ class Api(object):
 class AutomagicApi(object):
 
     @classmethod
-    def get_automagics(cls):
+    def get_automagics(cls, context: interfaces.context.ContextInterface = None) -> Generator[
+        interfaces.automagic.AutomagicInterface, None, None]:
         """Returns an automagic list of all the automagic objects"""
         seen_automagics = set()
-        ctx = cherrypy.session.get('context', contexts.Context())
-        cherrypy.session['context'] = ctx
+        if context is None:
+            ctx = contexts.Context()
+        else:
+            ctx = context
         automagics = automagic.available(ctx)
         for amagic in automagics:
             if amagic in seen_automagics:
@@ -116,24 +120,21 @@ class AutomagicApi(object):
 class PluginsApi(object):
 
     @classmethod
-    def get_plugins(cls):
-        volatility.plugins.__path__ = cherrypy.session.get('plugin_dir', '').split(";") + constants.PLUGINS_PATH
+    def get_plugins(cls) -> Dict[str, Type[interfaces.plugins.PluginInterface]]:
+        volatility.plugins.__path__ = constants.PLUGINS_PATH
         failures = volatility.framework.import_files(volatility.plugins,
                                                      True)  # Will not log as console's default level is WARNING
-        if cherrypy.session.get('plugins', None):
-            return cherrypy.session.get('plugins', None)
         plugin_list = {}
         for plugin in volatility.framework.class_subclasses(interfaces.plugins.PluginInterface):
             plugin_name = plugin.__module__ + "." + plugin.__name__
             if plugin_name.startswith("volatility.plugins."):
                 plugin_name = plugin_name[len("volatility.plugins."):]
             plugin_list[plugin_name] = plugin
-        cherrypy.session['plugins'] = plugin_list
         return plugin_list
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def list(self):
+    def list(self) -> List[Tuple[str, bytes]]:
         """List the available plugins"""
         plugin_list = self.get_plugins()
 
@@ -169,20 +170,32 @@ class PluginsApi(object):
         # Ensure that non-list items that should be lists are turned into lists
         global_config = json.loads(global_config)
         plugin_config = json.loads(plugin_config)
+
+        # Clean out the plugin_config
+        mark_for_deletion = []
+        for item in plugin_config:
+            if plugin_config[item] is None:
+                mark_for_deletion.append(item)
+        for item in mark_for_deletion:
+            del plugin_config[item]
+
         for automagic_req in AutomagicApi().get_requirements():
             if automagic_req['type'] == 'ListRequirement':
                 if not isinstance(global_config.get(automagic_req['name'], []), list):
                     global_config[automagic_req['name']] = [global_config[automagic_req['name']]]
         for req in self.get_requirements(plugin):
+            short_req_name = req['name'].split(configuration.CONFIG_SEPARATOR)[-1]
             if req['type'] == 'ListRequirement':
                 if not isinstance(plugin_config.get(req['name'], []), list):
                     plugin_config[req['name']] = [plugin_config[req['name']]]
             if req['type'] == 'IntRequirement':
-                short_req_name = req['name'].split(configuration.CONFIG_SEPARATOR)[-1]
                 try:
                     plugin_config[short_req_name] = int(plugin_config[short_req_name])
-                except TypeError:
+                except (TypeError, KeyError):
                     pass
+            if req['type'] == 'BooleanRequirement':
+                plugin_config[short_req_name] = bool(plugin_config.get(short_req_name, req['default']))
+
         job = {
             'plugin': plugin,
             'automagics': json.loads(automagics),
@@ -223,13 +236,13 @@ class PluginsApi(object):
                 plugin = plugins[job['plugin']]
                 plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
 
-                automagics = []
-                for amagic in AutomagicApi.get_automagics():
-                    if amagic.__class__.__name__ in job['automagics']:
-                        automagics.append(amagic)
-
                 ctx.config = HierarchicalDict(job['global_config'])
                 ctx.config.splice(plugin_config_path, HierarchicalDict(job['plugin_config']))
+
+                automagics = []
+                for amagic in AutomagicApi.get_automagics(ctx):
+                    if amagic.__class__.__name__ in job['automagics']:
+                        automagics.append(amagic)
 
                 threadrunner.put(generate_plugin, automagics, ctx, plugin, plugin_config_path, progress_queue)
 
@@ -303,22 +316,17 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
         return accumulator
 
     # Disable multi-processing using multiple multi-processes doesn't have any issues
-    volatility.framework.constants.DISABLE_MULTITHREADED_SCANNING = True
+    volatility.framework.constants.PARALLELISM = volatility.framework.constants.PARALLELISM_OFF
 
-    try:
-        automagic.run(automagics, ctx, plugin, "plugins", progress_callback = progress_callback)
-    except Exception as e:
-        progress_queue.put({'type': 'warning', 'data': {'message': 'Running automagic failed: {}'.format(repr(e))}})
-
-    unsatisfied = plugin.unsatisfied(ctx, plugin_config_path)
-    if unsatisfied:
-        progress_queue.put({'type': 'error', 'data': {'message': 'Plugin requirements not satisfied'}})
-        return None
+    for automagic_req in AutomagicApi().get_requirements():
+        if automagic_req['type'] == 'ListRequirement':
+            if not isinstance(ctx.config.get(automagic_req['name'], []), list):
+                ctx.config[automagic_req['name']] = [ctx.config[automagic_req['name']]]
 
     consumer = FileConsumer()
     try:
-        constructed = plugin(ctx, plugin_config_path)
-        constructed.set_file_consumer(consumer)
+        constructed = framework.plugins.run_plugin(ctx, automagics, plugin, plugin_config_path, progress_callback,
+                                                   consumer)
         progress_queue.put({'type': 'config', 'data': dict(constructed.build_configuration())})
         result = constructed.run()
 
@@ -332,7 +340,7 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
 
         result.populate(visit, progress_queue)
     except Exception as e:
-        progress_queue.put({'type': 'error', 'data': {'message': 'Exception: {}'.format(e)}})
+        progress_queue.put({'type': 'error', 'data': {'message': "Exception: {}".format(str(e))}})
         return None
 
     if consumer.files:
