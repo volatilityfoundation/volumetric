@@ -54,7 +54,7 @@ vollog.info("Logging started")
 framework.require_interface_version(0, 0, 0)
 
 
-class Api(object):
+class Api:
 
     def __init__(self):
         self.plugins = PluginsApi()
@@ -62,7 +62,7 @@ class Api(object):
         self.results = ResultsApi()
 
 
-class AutomagicApi(object):
+class AutomagicApi:
 
     @classmethod
     def get_automagics(cls, context: interfaces.context.ContextInterface = None) -> Generator[
@@ -114,7 +114,7 @@ class AutomagicApi(object):
         return result
 
 
-class PluginsApi(object):
+class PluginsApi:
 
     @classmethod
     def get_plugins(cls) -> Dict[str, Type[interfaces.plugins.PluginInterface]]:
@@ -350,7 +350,7 @@ threadrunner.subscribe()
 progress_queue = queue.Queue()
 
 
-class ResultsApi(object):
+class ResultsApi:
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
