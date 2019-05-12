@@ -69,10 +69,7 @@ class AutomagicApi(object):
         interfaces.automagic.AutomagicInterface, None, None]:
         """Returns an automagic list of all the automagic objects"""
         seen_automagics = set()
-        if context is None:
-            ctx = contexts.Context()
-        else:
-            ctx = context
+        ctx = context
         automagics = automagic.available(ctx)
         for amagic in automagics:
             if amagic in seen_automagics:
