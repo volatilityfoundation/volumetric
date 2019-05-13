@@ -217,7 +217,7 @@ class VolumetricResults extends PolymerElement {
             getResultPage.addEventListener('response', function() {
                 if (getResultPage.lastResponse) {
                     displayCard.heading = "Results";
-                    callback(getResultPage.lastResponse, getResultPage.lastResponse.length);
+                    callback(getResultPage.lastResponse);
                 } else {
                     callback([]);
                 }
