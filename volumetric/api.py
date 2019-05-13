@@ -400,8 +400,7 @@ class ResultsApi:
             return accumulator
 
         return list(
-            result.visit(None, visitor, initial_accumulator = [], sort_key = sort_key))[
-               index * page_size:(index + 1) * page_size]
+            result.visit(None, visitor, initial_accumulator = [], sort_key = sort_key))[index:index + page_size]
 
     @cherrypy.expose
     @cherrypy.tools.json_out()

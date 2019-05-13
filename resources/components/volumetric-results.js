@@ -226,13 +226,13 @@ class VolumetricResults extends PolymerElement {
             let parentId = params.parentItem ? params.parentItem['volumetric_id'] : null;
             if (params.sortOrders === undefined || params.sortOrders.length < 1) {
                 getResultPage.params = {
-                    'index': params.page,
+                    'index': params.page * params.pageSize,
                     'page_size': params.pageSize,
                     'parent_row_id': parentId
                 };
             } else {
                 getResultPage.params = {
-                    'index': params.page,
+                    'index': params.page * params.pageSize,
                     'page_size': params.pageSize,
                     'parent_row_id': parentId,
                     'sort_property': params.sortOrders[0].path,
