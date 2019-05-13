@@ -137,8 +137,8 @@ class VolumetricShell extends PolymerElement {
 
     _pageChanged(page) {
         // Load page import on demand. Show 404 page if fails
-        let resolvedPageUrl = this.resolveUrl('/resources/components/volumetric-' + page + '.js');
-        import(resolvedPageUrl).then(null, this._showPage404.bind(this));
+        // let resolvedPageUrl = this.resolveUrl('/resources/components/volumetric-' + page + '.js');
+        // import(resolvedPageUrl).then(null, this._showPage404.bind(this));
         if (page == 'plugins') {
             this.status = '';
             this.$.progressBar.classList.remove("error");
