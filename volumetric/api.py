@@ -490,6 +490,6 @@ class ResultsApi:
                     row_dict[key] = "-"
             writer.writerow(row_dict)
 
-        grid.visit(node = None, function = row_writer)
+        grid.visit(node = None, function = row_writer, initial_accumulator = None)
 
         return output_file.getvalue()
