@@ -4,6 +4,7 @@ __pycache__
 .idea
 bower_components
 node_modules
+package-lock.json
 
 # Symlink of the volatility code for testing
 volatility
