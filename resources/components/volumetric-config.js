@@ -40,9 +40,10 @@ class VolumetricConfig extends PolymerElement {
         <iron-ajax id="getAutomagics" url="/api/automagics/list" last-response="{{automagics}}"></iron-ajax>
         <iron-ajax id="prepareJob" url="/api/plugins/create_job" last-response="{{jobId}}"></iron-ajax>
 
-        <paper-card>
+        <paper-card heading="{{plugin}}">
             <div class="card-content">
                 <iron-form id="runPluginForm">
+                    <h3>General Options</h3>
                     <paper-collapse-item header="Available Automagics">
                         <template is="dom-repeat" items="{{automagics}}">
                             <paper-item>
@@ -57,24 +58,25 @@ class VolumetricConfig extends PolymerElement {
                             <volumetric-requirement-editor requirements="{{automagicRequirements}}"></volumetric-requirement-editor>
                         </iron-form>
                     </paper-collapse-item>
+                    <h3>Plugin Specific Options</h3>
                     <paper-tabs id="tabs" selected="{{configPage}}">
                         <paper-tab>Defined Options</paper-tab>
                         <paper-tab>Custom Options</paper-tab>
                     </paper-tabs>
                     <iron-pages selected="{{configPage}}">
                         <div class="flex">
-                            <paper-collapse-item header="{{plugin}} Options" opened="">
+                            <div>
                                 <volumetric-requirement-editor requirements="{{requirements}}"></volumetric-requirement-editor>
-                            </paper-collapse-item>
+                            </div>
                         </div>
                         <div class="flex">
                             <paper-item two-line="">
                                 <paper-item-body>
                                     <div class="layout horizontal">
-                                        <div class="flex">Config Options</div>
                                         <input id="fileInput" type="file" hidden="" on-change="_fileUploaded" accept=".txt, .json, text/plain, application/json">
                                         <label for="fileInput">
                                             <paper-icon-button icon="file-upload">Upload</paper-icon-button>
+                                            Upload JSON
                                         </label>
                                     </div>
                                     <paper-textarea id="configArea" value="{{_jsonifyConfig(pluginConfig.*)}}" label="JSON config" always-float-label=""></paper-textarea>

@@ -16,6 +16,12 @@ class VolumetricRequirementEditor extends PolymerElement {
     static get template() {
         return html`
         <style is="custom-style" include="iron-flex iron-flex-alignment">
+            :host {
+                display: block;
+
+                padding: 10px;
+            }
+
             paper-card {
                 width: 100%;
             }
