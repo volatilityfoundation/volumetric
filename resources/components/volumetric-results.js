@@ -62,7 +62,7 @@ class VolumetricResults extends PolymerElement {
                     </div>
                     <vaadin-grid id="grid">
                         <template is="dom-repeat" items="[[metadata.columns]]" as="column">
-                            <vaadin-grid-column>
+                            <vaadin-grid-column resizable="true">
                                 <template class="header">
                                     <vaadin-grid-sorter path="[[column.name]]">[[column.name]]</vaadin-grid-sorter>
                                 </template>
