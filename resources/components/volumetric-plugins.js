@@ -1,4 +1,5 @@
 import {PolymerElement} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
+import '/resources/node_modules/paper-collapse-item/paper-collapse-group.js';
 import '/resources/node_modules/paper-collapse-item/paper-collapse-item.js';
 import '/resources/node_modules/@polymer/paper-listbox/paper-listbox.js';
 import '/resources/node_modules/@polymer/paper-item/paper-item.js';
@@ -34,6 +35,7 @@ class VolumetricPlugins extends PolymerElement {
                 <paper-input label="Filter" value="{{list_filter}}"></paper-input>
             </paper-item>
             <paper-listbox>
+                <paper-collapse-group>
                 <template is="dom-repeat" items="[[_top_level(items)]]" filter="{{_top_level_filter(list_filter, items)}}">
                     <paper-collapse-item header="[[item]]">
                         <paper-listbox>
@@ -48,6 +50,7 @@ class VolumetricPlugins extends PolymerElement {
                         </paper-listbox>
                     </paper-collapse-item>
                 </template>
+                </paper-collapse-group>
             </paper-listbox>
         </paper-card>
 `;
@@ -105,10 +108,12 @@ class VolumetricPlugins extends PolymerElement {
 
     _plugin_filter(list_filter) {
         return function(pair) {
-            if (pair[0] === null || pair[1] === null) {
-                return true;
-            }
-            return (pair[0].includes(list_filter) || pair[1].includes(list_filter));
+            let result = false;
+            if (pair[0] !== null)
+                result = result || pair[0].includes(list_filter);
+            if (pair[1] !== null)
+                result = result || pair[1].includes(list_filter);
+            return result;
         }
     }
 
