@@ -37,7 +37,7 @@ class VolumetricConfig extends PolymerElement {
 
         <iron-ajax id="getRequirements" url\$="/api/plugins/get_requirements?plugin_name=[[plugin]]" last-response="{{requirements}}"></iron-ajax>
         <iron-ajax id="getAutomagicRequirements" url="/api/automagics/get_requirements" last-response="{{automagicRequirements}}"></iron-ajax>
-        <iron-ajax id="getAutomagics" url="/api/automagics/list" last-response="{{automagics}}"></iron-ajax>
+        <iron-ajax id="getAutomagics" url\$="/api/automagics/list?plugin_name=[[plugin]]" last-response="{{automagics}}"></iron-ajax>
         <iron-ajax id="prepareJob" url="/api/plugins/create_job" last-response="{{jobId}}"></iron-ajax>
 
         <paper-card heading="{{plugin}}">
@@ -47,7 +47,7 @@ class VolumetricConfig extends PolymerElement {
                     <paper-collapse-item header="Available Automagics">
                         <template is="dom-repeat" items="{{automagics}}">
                             <paper-item>
-                                <paper-checkbox name="automagic_{{item.name}}" checked="_automagicEnabled(item)" on-tap="_automagicTapped" item\$="{{item}}">
+                                <paper-checkbox name="automagic_{{item.name}}" checked="{{_automagicEnabled(item)}}" on-tap="_automagicTapped" item\$="{{item}}">
                                     {{item.name}} - {{item.description}}
                                 </paper-checkbox>
                             </paper-item>
@@ -138,11 +138,24 @@ class VolumetricConfig extends PolymerElement {
 
     _automagicTapped(e) {
         let name = e.target.id.substring(0, 10);
-        this.automagics[name]['selected'] = !this.automagics[name].get('selected', false);
+        if (this.automagics) {
+            for (var index in this.automagics) {
+                if (name == this.automagics[index]['name']) {
+                    this.automagics[index]['selected'] = !this.automagics[index].get('selected', false);
+                }
+            }
+        }
     }
 
     _automagicEnabled(item) {
-        return this.automagics[item.name]['selected'];
+        if (this.automagics) {
+            for (var index in this.automagics) {
+                if (item.name == this.automagics[index]['name']) {
+                    return this.automagics[index]['selected'];
+                }
+            }
+        }
+        return true;
     }
 
     _refresh() {

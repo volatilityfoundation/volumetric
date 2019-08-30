@@ -78,9 +78,14 @@ class AutomagicApi:
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def list(self):
+    def list(self, plugin_name = None):
         """Returns an automagic list of all the automagic objects"""
-        amagics = self.get_automagics()
+        amagics = list(self.get_automagics())
+        suggested = amagics
+        if plugin_name:
+            plugin = PluginsApi.get_plugins().get(plugin_name)
+            if plugin:
+                suggested = automagic.choose_automagic(amagics, plugin)
         result = []
         for amagic in amagics:
             amagic_name = amagic.__class__.__name__
@@ -88,7 +93,8 @@ class AutomagicApi:
                 'name': amagic_name,
                 'full_name': amagic.__class__.__module__ + "." + amagic_name,
                 'description': amagic.__doc__[:amagic.__doc__.find("\n")],
-                'priority': amagic.priority
+                'priority': amagic.priority,
+                'selected': amagic in suggested
             }
             result.append(amagic_item)
         return result
