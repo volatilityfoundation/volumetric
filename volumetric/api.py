@@ -313,7 +313,7 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
         return accumulator
 
     # Disable multi-processing using multiple multi-processes doesn't have any issues
-    volatility.framework.constants.PARALLELISM = volatility.framework.constants.PARALLELISM_OFF
+    volatility.framework.constants.PARALLELISM = volatility.framework.constants.Parallelism.Off
 
     for automagic_req in AutomagicApi().get_requirements():
         if automagic_req['type'] == 'ListRequirement':
@@ -322,8 +322,8 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
 
     consumer = FileConsumer()
     try:
-        constructed = framework.plugins.run_plugin(ctx, automagics, plugin, plugin_config_path, progress_callback,
-                                                   consumer)
+        constructed = framework.plugins.construct_plugin(ctx, automagics, plugin, plugin_config_path, progress_callback,
+                                                         consumer)
         progress_queue.put({'type': 'config', 'data': dict(constructed.build_configuration())})
         result = constructed.run()
 
@@ -331,8 +331,8 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
             'type':
                 'columns',
             'data':
-                [(-1, 'depth', 'int')] + [(column.index, column.name, column.type.__name__) for column in
-                                          result.columns]
+                [('depth', 'int')] + [(column.name, column.type.__name__) for column in
+                                      result.columns]
         })
 
         result.populate(visit, progress_queue)
@@ -415,7 +415,6 @@ class ResultsApi:
             'size':
                 job['result'].row_count,
             'columns': [{
-                'index': column.index,
                 'name': column.name,
                 'type': column.type.__name__
             } for column in job['result'].columns]

@@ -67,7 +67,7 @@ class VolumetricResults extends PolymerElement {
                                     <vaadin-grid-sorter path="[[column.name]]">[[column.name]]</vaadin-grid-sorter>
                                 </template>
                                 <template>
-                                    <template is="dom-if" if="[[isZero(column.index)]]">
+                                    <template is="dom-if" if="[[isFirstColumn(metadata, column)]]">
                                         <vaadin-grid-tree-toggle leaf="[[!item.hasChildren]]" expanded="{{expanded}}" level="[[level]]">
                                             <template is="dom-if" if="[[isColumnType(column.type, 'Disassembly')]]">
                                                 <paper-collapse-item header="Disassembly">
@@ -82,7 +82,7 @@ class VolumetricResults extends PolymerElement {
                                             </template>
                                         </vaadin-grid-tree-toggle>
                                     </template>
-                                    <template is="dom-if" if="[[!isZero(column.index)]]">
+                                    <template is="dom-if" if="[[!isFirstColumn(metadata, column)]]">
                                         <template is="dom-if" if="[[isColumnType(column.type, 'Disassembly')]]">
                                             <paper-collapse-item header="Disassembly">
                                                 [[getItem(column.name,item)]]
@@ -181,8 +181,8 @@ class VolumetricResults extends PolymerElement {
         this.set('partialData', []);
     }
 
-    isZero(index) {
-        return index === 0;
+    isFirstColumn(metadata, column) {
+        return metadata.columns[0] == column;
     }
 
     isColumnType(column_type, desired_type) {
