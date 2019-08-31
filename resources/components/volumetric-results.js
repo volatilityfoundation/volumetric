@@ -71,28 +71,28 @@ class VolumetricResults extends PolymerElement {
                                         <vaadin-grid-tree-toggle leaf="[[!item.hasChildren]]" expanded="{{expanded}}" level="[[level]]">
                                             <template is="dom-if" if="[[isColumnType(column.type, 'Disassembly')]]">
                                                 <paper-collapse-item header="Disassembly">
-                                                    [[getItem(column.name,item)]]
+                                                    [[getItem(column.name, item, column.type)]]
                                                 </paper-collapse-item>
                                             </template>
                                             <template is="dom-if" if="[[isColumnType(column.type, 'bool')]]">
-                                                <paper-checkbox checked="[[getItem(column.name, item)]]" disabled=""></paper-checkbox>
+                                                <paper-checkbox checked="[[getItem(column.name, item, column.type)]]" disabled=""></paper-checkbox>
                                             </template>
                                             <template is="dom-if" if="[[isDefaultType(column.type)]]">
-                                                [[getItem(column.name,item)]]
+                                                [[getItem(column.name, item, column.type)]]
                                             </template>
                                         </vaadin-grid-tree-toggle>
                                     </template>
                                     <template is="dom-if" if="[[!isFirstColumn(metadata, column)]]">
                                         <template is="dom-if" if="[[isColumnType(column.type, 'Disassembly')]]">
                                             <paper-collapse-item header="Disassembly">
-                                                [[getItem(column.name,item)]]
+                                                [[getItem(column.name, item, column.type)]]
                                             </paper-collapse-item>
                                         </template>
                                         <template is="dom-if" if="[[isColumnType(column.type, 'bool')]]">
-                                            <paper-checkbox checked="[[getItem(column.name, item)]]" disabled=""></paper-checkbox>
+                                            <paper-checkbox checked="[[getItem(column.name, item, column.type)]]" disabled=""></paper-checkbox>
                                         </template>
                                         <template is="dom-if" if="[[isDefaultType(column.type)]]">
-                                            [[getItem(column.name,item)]]
+                                            [[getItem(column.name, item, column.type)]]
                                         </template>
                                     </template>
                                 </template>
@@ -169,7 +169,7 @@ class VolumetricResults extends PolymerElement {
     }
 
     getColumnName(item) {
-        return item[1];
+        return item[0];
     }
 
     addPartialData(data) {
@@ -217,10 +217,7 @@ class VolumetricResults extends PolymerElement {
             getResultPage.addEventListener('response', function() {
                 if (getResultPage.lastResponse) {
                     displayCard.heading = "Results";
-                    if (getResultPage.lastResponse.length < params.pageSize && params.page === 0)
-                        callback(getResultPage.lastResponse, getResultPage.lastResponse.length);
-                    else
-                        callback(getResultPage.lastResponse);
+                    callback(getResultPage.lastResponse['results'], getResultPage.lastResponse['length']);
                 } else {
                     callback([]);
                 }
@@ -250,11 +247,24 @@ class VolumetricResults extends PolymerElement {
         getResultMetadata.generateRequest();
     }
 
-    getItem(column, item) {
-        if (column !== undefined && item !== undefined && item !== null) {
-            return item[column.toLowerCase()];
+    sanitizeColumnName(column_name) {
+        return column_name.toLowerCase().replace(/ /g, "").replace(/[^abcdefghijklmnopqrstuvwxyz_0123456789]/g, "_");
+    }
+
+    getItem(column, item, column_type) {
+        if (item === undefined || column === undefined || item === null) {
+            return null;
         }
-        return null;
+        var value = item[this.sanitizeColumnName(column)];
+        if (column_type == 'Hex') {
+            return '0x' + value.toString(16);
+        }
+        if (column_type == 'bool') {
+            if (value == "-") {
+                return false;
+            }
+        }
+        return value;
     }
 
     getTreeIndicatorWidth(item) {
