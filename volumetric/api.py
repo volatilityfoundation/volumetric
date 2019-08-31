@@ -328,7 +328,7 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
 
     consumer = FileConsumer()
     try:
-        constructed = framework.plugins.construct_plugin(ctx, automagics, plugin, plugin_config_path, progress_callback,
+        constructed = framework.plugins.construct_plugin(ctx, automagics, plugin, "plugins", progress_callback,
                                                          consumer)
         progress_queue.put({'type': 'config', 'data': dict(constructed.build_configuration())})
         result = constructed.run()
