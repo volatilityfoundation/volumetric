@@ -167,36 +167,52 @@ class VolumetricShell extends PolymerElement {
         this.eventSource = new EventSource('/api/plugins/run_job?job_id=' + this.jobId);
         this.eventSource.addEventListener('progress', (e) => {
             let data = JSON.parse(e.data);
-            this.$.progressBar.classList.remove("error");
-            this.progress = data['value'];
-            this.status = data['message'];
+            if (this.jobId == data['job_id']) {
+                data = data['data'];
+                this.$.progressBar.classList.remove("error");
+                this.progress = data['value'];
+                this.status = data['message'];
+            }
         });
         this.eventSource.addEventListener('error', (e) => {
             this.progress = 100;
             this.$.progressBar.classList.add("error");
             let data = JSON.parse(e.data);
-            this.status = data['message'];
-            e.target.close();
+            if (this.jobId == data['job_id']) {
+                data = data['data'];
+                this.status = data['message'];
+                e.target.close();
+            }
         });
         this.eventSource.addEventListener('warning', (e) => {
             let data = JSON.parse(e.data);
-            this.$.progressBar.classList.add("error");
-            this.status = data['message'];
+            if (this.jobId == data['job_id']) {
+                data = data['data'];
+                this.$.progressBar.classList.add("error");
+                this.status = data['message'];
+            }
         });
         this.eventSource.addEventListener('columns', (e) => {
             console.log("Partial output columns");
             let data = JSON.parse(e.data);
-            if (this.$.resultsPage.$ !== undefined) {
-                this.$.resultsPage.$.resultView.selected = 0;
-                this.$.resultsPage.partialColumns = data;
+            if (this.jobId == data['job_id']) {
+                data = data['data'];
+                if (this.$.resultsPage.$ !== undefined) {
+                    this.$.resultsPage.$.resultView.selected = 0;
+                    this.$.resultsPage.partialColumns = data;
+                }
             }
         });
         this.eventSource.addEventListener('partial-output', (e) => {
             console.log("Partial output");
             let data = JSON.parse(e.data);
-            if (this.$.resultsPage.$ !== undefined) {
-                this.$.resultsPage.$.resultView.selected = 0;
-                this.$.resultsPage.addPartialData(data);
+            debugger;
+            if (this.jobId == data['job_id']) {
+                data = data['data'];
+                if (this.$.resultsPage.$ !== undefined) {
+                    this.$.resultsPage.$.resultView.selected = 0;
+                    this.$.resultsPage.addPartialData(data);
+                }
             }
         });
         this.eventSource.addEventListener('complete-output', (e) => {

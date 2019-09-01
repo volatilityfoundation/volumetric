@@ -60,6 +60,7 @@ class Api:
         self.plugins = PluginsApi()
         self.automagics = AutomagicApi()
         self.results = ResultsApi()
+        self.jobs = JobsApi()
 
 
 class AutomagicApi:
@@ -204,7 +205,8 @@ class PluginsApi:
             'automagics': json.loads(automagics),
             'global_config': global_config,
             'plugin_config': plugin_config,
-            'result': None
+            'result': None,
+            'running': False
         }
         hash = hashlib.sha1(bytes(json.dumps(job, sort_keys = True), 'latin-1')).hexdigest()
         jobs = cherrypy.session.get('jobs', {})
@@ -218,16 +220,16 @@ class PluginsApi:
         cherrypy.response.headers["Content-Type"] = "text/event-stream;charset=utf-8"
 
         def generator():
-
             def respond(item):
                 return "retry: 1000\nevent: {}\ndata: {}\n\n".format(
-                    item['type'], json.dumps(item['data'], cls = jsonvol.JSONEncoder))
+                    item['type'], json.dumps({'job_id': job_id, 'data': item['data']}, cls = jsonvol.JSONEncoder))
 
             jobs = cherrypy.session.get('jobs', {})
             if job_id not in jobs:
                 yield respond({'type': 'error', 'data': {'message': 'Failed to locate prepared job'}})
-                raise StopIteration
+                return
             job = jobs[job_id]
+            job['running'] = True
 
             if job['result'] is None:
                 ctx = cherrypy.session.get('context', contexts.Context())
@@ -235,7 +237,8 @@ class PluginsApi:
                 plugins = self.get_plugins()
                 if job['plugin'] not in plugins:
                     yield respond({'type': 'error', 'data': {'message': 'Invalid plugin selected'}})
-                    raise StopIteration
+                    job['running'] = False
+                    return
                 plugin = plugins[job['plugin']]
                 plugin_config_path = interfaces.configuration.path_join('plugins', plugin.__name__)
 
@@ -253,6 +256,9 @@ class PluginsApi:
                 while not finished:
                     try:
                         progress = progress_queue.get(0.1)
+                        if not job['running']:
+                            yield respond({'type': 'error', 'data': {'message': 'Job no longer running'}})
+                            return
                         if (progress['type'] == 'finished' or progress['type'] == 'error'):
                             if progress['type'] == 'finished':
                                 job['result'] = progress['result']
@@ -269,6 +275,7 @@ class PluginsApi:
                     except TimeoutError:
                         pass
             yield (respond({'type': 'complete-output', 'data': 'complete'}))
+            job['running'] = False
 
         return generator()
 
@@ -504,3 +511,27 @@ class ResultsApi:
         grid.visit(node = None, function = row_writer, initial_accumulator = None)
 
         return output_file.getvalue()
+
+
+class JobsApi:
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def list(self):
+        jobs = cherrypy.session.get('jobs', {})
+        result = []
+        for job_id in jobs:
+            result += [{'job_id': job_id, 'running': jobs[job_id].get('running', False)}]
+        return result
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def stop(self, job_id: str = None):
+        if job_id is None:
+            return False
+        jobs = cherrypy.session.get('jobs', {})
+        if job_id not in jobs:
+            return False
+        else:
+            jobs[job_id]['running'] = False
+            return True
