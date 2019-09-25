@@ -8,13 +8,14 @@ import json
 import logging
 import os
 import queue
+import traceback
 from typing import List, Tuple, Dict, Type, Generator
 
 import cherrypy
 
 import volatility
 from volatility import framework, plugins
-from volatility.framework import constants, interfaces, contexts, automagic
+from volatility.framework import constants, interfaces, contexts, automagic, exceptions
 from volatility.framework.configuration import requirements
 from volatility.framework.interfaces import configuration, renderers
 from volatility.framework.interfaces.configuration import HierarchicalDict
@@ -333,8 +334,14 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
         })
 
         result.populate(visit, progress_queue)
-    except Exception as e:
-        progress_queue.put({'type': 'error', 'data': {'message': "Exception: {}".format(str(e))}})
+    except exceptions.UnsatisfiedException as excp:
+        progress_queue.put(
+            {'type': 'error', 'data': {'message': "Unsatisfied requirements: {}".format(excp.unsatisfied)}})
+        return None
+    except Exception as excp:
+        fulltrace = traceback.TracebackException.from_exception(excp).format(chain = True)
+        progress_queue.put({'type': 'error', 'data': {'message': "Exception: {}".format(str(excp))}})
+        vollog.debug("\n\nEXCEPTION\n{}".format("\n".join(fulltrace)))
         return None
 
     if consumer.files:
