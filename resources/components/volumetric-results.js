@@ -1,3 +1,8 @@
+/*
+ * This file is Copyright 2019 Volatility Foundation and licensed under the Volatility Software License 1.0
+ * which is available at https://www.volatilityfoundation.org/license/vsl_v1.0
+ *
+ */
 import {PolymerElement} from '/resources/node_modules/@polymer/polymer/polymer-element.js';
 import '/resources/node_modules/@polymer/iron-ajax/iron-ajax.js';
 import '/resources/node_modules/@polymer/iron-pages/iron-pages.js';
