@@ -4,12 +4,19 @@
 
 
 import argparse
+import logging
 import os
 
 import cherrypy
 from cherrypy.lib.static import serve_file
 
 import volumetric.api
+
+logging.basicConfig(level = 0)
+
+vollog = logging.getLogger('volatility')
+vollog.setLevel(0)
+vollog.info("Logging started")
 
 basedir = os.path.dirname(os.path.dirname(__file__))
 
@@ -23,12 +30,24 @@ class VolumetricServer(object):
         self.thread_pool_size = 10  # arguments.thread_pool_size or 100
         self.server = None
         self.api = volumetric.api.Api()
+        if arguments.log_file:
+            self.setup_logging(arguments.log_file)
+
+    def setup_logging(self, filename):
+        file_logger = logging.FileHandler(filename)
+        file_logger.setLevel(0)
+        file_formatter = logging.Formatter(
+            datefmt = '%y-%m-%d %H:%M:%S', fmt = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+        file_logger.setFormatter(file_formatter)
+        vollog.addHandler(file_logger)
 
     @classmethod
     def get_argument_parser(cls):
         parser = argparse.ArgumentParser()
         parser.add_argument("-q", "--quiet", action = "store_true", help = "Disable debugging output", default = False)
         parser.add_argument("-s", "--ssl", action = "store_true", help = "Enable SSL for the server", default = False)
+        parser.add_argument("-l", "--log-file", metavar = "FILENAME", help = "Log volatility output to FILENAME",
+                            default = None)
         parser.add_argument(
             "-p", "--port", metavar = "PORT", type = int, help = "Port on which the server will run", default = 8000)
         return parser
@@ -37,6 +56,7 @@ class VolumetricServer(object):
         # TODO: Convert to gunicorn or something with better asynchronicity
 
         configuration = {
+            'log.screen': False,
             'server.socket_port': self.port,
             'server.thread_pool': self.thread_pool_size,
             'tools.sessions.locking': 'explicit',

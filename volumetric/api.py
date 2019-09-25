@@ -23,18 +23,7 @@ from volatility.framework.renderers import ColumnSortKey
 from volumetric import jsonvol
 from volumetric.backqueue import BackgroundTaskQueue
 
-logging.basicConfig(filename = 'logs.txt', level = 0)
-
 vollog = logging.getLogger('volatility')
-vollog.setLevel(0)
-
-# file_logger = logging.FileHandler('logs.txt')
-# file_logger.setLevel(0)
-# file_formatter = logging.Formatter(
-#     datefmt = '%y-%m-%d %H:%M:%S', fmt = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-# file_logger.setFormatter(file_formatter)
-# vollog.addHandler(file_logger)
-vollog.info("Logging started")
 
 framework.require_interface_version(0, 0, 0)
 
