@@ -211,7 +211,6 @@ class VolumetricShell extends PolymerElement {
         this.eventSource.addEventListener('partial-output', (e) => {
             console.log("Partial output");
             let data = JSON.parse(e.data);
-            debugger;
             if (this.jobId == data['job_id']) {
                 data = data['data'];
                 if (this.$.resultsPage.$ !== undefined) {
