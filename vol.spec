@@ -15,10 +15,16 @@ block_cipher = None
 # This adds the current working directory, which should usually do the trick
 sys.path.append(os.getcwd())
 
+if not os.path.exists('resources/node_modules'):
+    print("Please run 'npm install' before attempting to build an executable")
+    sys.exit(1)
+
 a = Analysis(['vol.py'],
              pathex = [],
              binaries = [],
-             datas = collect_data_files('volatility.framework') + \
+             datas = [('resources', 'resources')] + \
+                     collect_data_files('volumetric') + \
+                     collect_data_files('volatility.framework') + \
                      collect_data_files('volatility.framework.automagic', include_py_files = True) + \
                      collect_data_files('volatility.framework.plugins', include_py_files = True) + \
                      collect_data_files('volatility.schemas') + \
@@ -41,7 +47,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           [],
-          name = 'vol',
+          name = 'volumetric',
           debug = False,
           bootloader_ignore_signals = False,
           strip = False,
