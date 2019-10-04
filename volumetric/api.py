@@ -372,8 +372,8 @@ class ResultsApi:
         if not job.get('result', None):
             return None
 
-        if job.get('cached_results', {}).get((job_id, parent_row_id, sort_property)):
-            result_list = job.get('cached_results', {})[(job_id, parent_row_id, sort_property)]
+        if job.get('cached_results', {}).get((job_id, parent_row_id, sort_property, sort_direction)):
+            result_list = job.get('cached_results', {})[(job_id, parent_row_id, sort_property, sort_direction)]
         else:
             result = job['result']
             sort_key = None
@@ -397,7 +397,7 @@ class ResultsApi:
 
             result_list = list(result.visit(None, visitor, initial_accumulator = [], sort_key = sort_key))
             cached_results = job.get('cached_results', {})
-            cached_results[(job_id, parent_row_id, sort_property)] = result_list
+            cached_results[(job_id, parent_row_id, sort_property, sort_direction)] = result_list
             job['cached_results'] = cached_results
 
         return {'length': len(result_list), 'results': result_list[index:index + page_size]}
