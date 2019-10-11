@@ -10,6 +10,7 @@ import '/resources/node_modules/@polymer/app-layout/app-header-layout/app-header
 import '/resources/node_modules/@polymer/app-layout/app-scroll-effects/app-scroll-effects.js';
 import '/resources/node_modules/@polymer/app-layout/app-toolbar/app-toolbar.js';
 import '/resources/node_modules/@polymer/iron-pages/iron-pages.js';
+import '/resources/node_modules/@polymer/iron-ajax/iron-ajax.js';
 import '/resources/node_modules/@polymer/paper-icon-button/paper-icon-button.js';
 import '/resources/node_modules/@polymer/paper-progress/paper-progress.js';
 import '/resources/node_modules/@polymer/app-route/app-location.js';
@@ -64,6 +65,11 @@ class VolumetricShell extends PolymerElement {
             .text-capitalize {
                 text-transform: capitalize;
             }
+
+            .footer {
+                font-size: 10pt;
+                color: #c0c0c0;
+            }
         </style>
 
         <app-location route="{{route}}"></app-location>
@@ -87,6 +93,9 @@ class VolumetricShell extends PolymerElement {
             <volumetric-results id="resultsPage" name="results" page="{{page}}" job-id="{{jobId}}"></volumetric-results>
             <volumetric-404 name="404"></volumetric-404>
         </iron-pages>
+
+        <iron-ajax url="/api/volatility_version" last-response="{{volatility_version}}" auto ></iron-ajax>
+        <div class="footer">Volatility version: {{volatility_version}}</div>
 `;
     }
 

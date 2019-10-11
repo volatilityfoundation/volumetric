@@ -36,6 +36,11 @@ class Api:
         self.results = ResultsApi()
         self.jobs = JobsApi()
 
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def volatility_version(self):
+        return framework.constants.PACKAGE_VERSION
+
 
 class AutomagicApi:
 
