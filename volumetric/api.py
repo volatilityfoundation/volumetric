@@ -25,7 +25,7 @@ from volumetric.backqueue import BackgroundTaskQueue
 
 vollog = logging.getLogger('volatility')
 
-framework.require_interface_version(0, 0, 0)
+framework.require_interface_version(1, 0, 0)
 
 
 class Api:
