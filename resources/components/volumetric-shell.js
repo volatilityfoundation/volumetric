@@ -95,7 +95,7 @@ class VolumetricShell extends PolymerElement {
         </iron-pages>
 
         <iron-ajax url="/api/volatility_version" last-response="{{volatility_version}}" auto ></iron-ajax>
-        <div class="footer">Volatility version: {{volatility_version}}</div>
+        <div class="footer">Volatility 3 version: {{volatility_version}}</div>
 `;
     }
 
