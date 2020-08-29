@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import queue
+import tempfile
 import traceback
 from typing import List, Tuple, Dict, Type, Generator
 
@@ -25,7 +26,7 @@ from volumetric.backqueue import BackgroundTaskQueue
 
 vollog = logging.getLogger('volatility')
 
-framework.require_interface_version(1, 0, 0)
+framework.require_interface_version(2, 0, 0)
 
 
 class Api:
@@ -286,14 +287,52 @@ class PluginsApi:
             f.write(fileval)
 
 
-class FileConsumer(interfaces.plugins.FileConsumerInterface):
+def file_handler_factory(file_list: List):
+    class WebFileHandler(interfaces.plugins.FileHandlerInterface):
+        # TODO: We have to clear out the temporary files when we're done
 
-    def __init__(self):
-        self.files = []
+        def __init__(self, filename: str):
+            fd, self._name = tempfile.mkstemp(suffix = '.vol3', prefix = 'tmp_')
+            self._file = io.open(fd, mode = 'w+b')
+            interfaces.plugins.FileHandlerInterface.__init__(self, filename)
+            for item in dir(self._file):
+                if not item.startswith('_') and not item in ['closed', 'close', 'mode', 'name']:
+                    setattr(self, item, getattr(self._file, item))
 
-    def consume_file(self, file: interfaces.plugins.FileInterface):
-        # TODO: Consider writing these to disk to free up memory
-        self.files.append(file)
+        def __getattr__(self, item):
+            return getattr(self._file, item)
+
+        @property
+        def closed(self):
+            return self._file.closed
+
+        @property
+        def mode(self):
+            return self._file.mode
+
+        @property
+        def name(self):
+            return self._file.name
+
+        def getvalue(self) -> bytes:
+            """Mimic a BytesIO object's getvalue parameter"""
+            # Opens the file new so we're not trying to do IO on a closed file
+            this_file = open(self._name, mode = 'rb')
+            return this_file.read()
+
+        def delete(self):
+            self.close()
+            os.remove(self._name)
+
+        def close(self):
+            """Closes and commits the file (by moving the temporary file to the correct name"""
+            # Don't overcommit
+            if self._file.closed:
+                return
+
+            file_list.append(self)
+
+    return WebFileHandler
 
 
 def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue):
@@ -312,10 +351,11 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
             if not isinstance(ctx.config.get(automagic_req['name'], []), list):
                 ctx.config[automagic_req['name']] = [ctx.config[automagic_req['name']]]
 
-    consumer = FileConsumer()
+    file_list = []
+    file_handler = file_handler_factory(file_list)
     try:
         constructed = framework.plugins.construct_plugin(ctx, automagics, plugin, "plugins", progress_callback,
-                                                         consumer)
+                                                         file_handler)
         progress_queue.put({'type': 'config', 'data': dict(constructed.build_configuration())})
         result = constructed.run()
 
@@ -338,8 +378,8 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
         vollog.debug("\n\nEXCEPTION\n{}".format("\n".join(fulltrace)))
         return None
 
-    if consumer.files:
-        progress_queue.put({'type': 'files', 'data': consumer.files})
+    if file_list:
+        progress_queue.put({'type': 'files', 'data': file_list})
     progress_queue.put({'type': 'finished', 'data': {'message': 'Complete'}, 'result': result})
 
 
@@ -453,7 +493,7 @@ class ResultsApi:
             return None
         cherrypy.response.headers['Content-Disposition'] = "inline; filename=\"{}\" ".format(
             files[file_id].preferred_filename)
-        return files[file_id].data.getvalue()
+        return files[file_id].getvalue()
 
     @cherrypy.expose
     def download_config(self, job_id):
