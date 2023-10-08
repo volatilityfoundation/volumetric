@@ -30,7 +30,6 @@ framework.require_interface_version(2, 5, 2)
 
 
 class Api:
-
     def __init__(self):
         self.plugins = PluginsApi()
         self.automagics = AutomagicApi()
@@ -44,7 +43,6 @@ class Api:
 
 
 class AutomagicApi:
-
     @classmethod
     def get_automagics(
         cls, context: interfaces.context.ContextInterface = None
@@ -108,7 +106,6 @@ class AutomagicApi:
 
 
 class PluginsApi:
-
     @classmethod
     def get_plugins(cls) -> Dict[str, Type[interfaces.plugins.PluginInterface]]:
         volatility3.plugins.__path__ = constants.PLUGINS_PATH
@@ -467,7 +464,6 @@ progress_queue = queue.Queue()
 
 
 class ResultsApi:
-
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def list(self):
@@ -640,7 +636,6 @@ class ResultsApi:
 
 
 class JobsApi:
-
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def list(self):
