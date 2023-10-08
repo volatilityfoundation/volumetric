@@ -14,22 +14,23 @@ from typing import List, Tuple, Dict, Type, Generator
 
 import cherrypy
 
-import volatility
-from volatility import framework, plugins
-from volatility.framework import constants, interfaces, contexts, automagic, exceptions
-from volatility.framework.configuration import requirements
-from volatility.framework.interfaces import configuration, renderers
-from volatility.framework.interfaces.configuration import HierarchicalDict
-from volatility.framework.renderers import ColumnSortKey
+import volatility3
+from volatility3 import framework, plugins
+from volatility3.framework import constants, interfaces, contexts, automagic, exceptions
+from volatility3.framework.configuration import requirements
+from volatility3.framework.interfaces import configuration, renderers
+from volatility3.framework.interfaces.configuration import HierarchicalDict
+from volatility3.framework.renderers import ColumnSortKey
 from volumetric import jsonvol
 from volumetric.backqueue import BackgroundTaskQueue
 
 vollog = logging.getLogger("volatility")
 
-framework.require_interface_version(2, 0, 0)
+framework.require_interface_version(2, 5, 2)
 
 
 class Api:
+
     def __init__(self):
         self.plugins = PluginsApi()
         self.automagics = AutomagicApi()
@@ -43,6 +44,7 @@ class Api:
 
 
 class AutomagicApi:
+
     @classmethod
     def get_automagics(
         cls, context: interfaces.context.ContextInterface = None
@@ -106,19 +108,20 @@ class AutomagicApi:
 
 
 class PluginsApi:
+
     @classmethod
     def get_plugins(cls) -> Dict[str, Type[interfaces.plugins.PluginInterface]]:
-        volatility.plugins.__path__ = constants.PLUGINS_PATH
-        failures = volatility.framework.import_files(
-            volatility.plugins, True
+        volatility3.plugins.__path__ = constants.PLUGINS_PATH
+        failures = volatility3.framework.import_files(
+            volatility3.plugins, True
         )  # Will not log as console's default level is WARNING
         plugin_list = {}
-        for plugin in volatility.framework.class_subclasses(
+        for plugin in volatility3.framework.class_subclasses(
             interfaces.plugins.PluginInterface
         ):
             plugin_name = plugin.__module__ + "." + plugin.__name__
-            if plugin_name.startswith("volatility.plugins."):
-                plugin_name = plugin_name[len("volatility.plugins.") :]
+            if plugin_name.startswith("volatility3.plugins."):
+                plugin_name = plugin_name[len("volatility3.plugins.") :]
             plugin_list[plugin_name] = plugin
         return plugin_list
 
@@ -404,8 +407,8 @@ def generate_plugin(automagics, ctx, plugin, plugin_config_path, progress_queue)
         return accumulator
 
     # Disable multi-processing using multiple multi-processes doesn't have any issues
-    volatility.framework.constants.PARALLELISM = (
-        volatility.framework.constants.Parallelism.Off
+    volatility3.framework.constants.PARALLELISM = (
+        volatility3.framework.constants.Parallelism.Off
     )
 
     for automagic_req in AutomagicApi().get_requirements():
@@ -464,6 +467,7 @@ progress_queue = queue.Queue()
 
 
 class ResultsApi:
+
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def list(self):
@@ -519,7 +523,7 @@ class ResultsApi:
                     else None,
                     "hasChildren": bool(result.children(node)),
                 }
-                item_dict.update(dict(node.values._asdict()))
+                item_dict.update(node.asdict())
                 for key, value in item_dict.items():
                     if isinstance(value, renderers.BaseAbsentValue):
                         # TODO: Further differentiate between AbsentValues
@@ -624,7 +628,7 @@ class ResultsApi:
 
         def row_writer(node, _accumulator):
             row_dict = {"Depth": node.path_depth}
-            row_dict.update(node.values._asdict())
+            row_dict.update(node.asdict())
             for key, value in row_dict.items():
                 if isinstance(value, renderers.BaseAbsentValue):
                     row_dict[key] = "-"
@@ -636,6 +640,7 @@ class ResultsApi:
 
 
 class JobsApi:
+
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def list(self):

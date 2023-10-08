@@ -6,7 +6,7 @@ import json
 
 import cherrypy
 
-from volatility.framework import interfaces, renderers
+from volatility3.framework import interfaces, renderers
 
 
 class JSONEncoder(json.JSONEncoder):

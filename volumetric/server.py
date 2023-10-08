@@ -95,6 +95,7 @@ class VolumetricServer(object):
             "/": {},
             "/resources": {
                 "tools.staticdir.on": True,
+                "tools.staticdir.debug": True,
                 "tools.staticdir.dir": os.path.join(
                     os.path.dirname(os.path.dirname(__file__)), "resources"
                 ),
