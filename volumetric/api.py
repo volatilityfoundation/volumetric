@@ -514,9 +514,9 @@ class ResultsApi:
                 # We append "h" to ensure the value is treated as a string when it's returned to python
                 item_dict = {
                     "volumetric_id": "h" + str(node.__hash__()),
-                    "volumetric_parent": ("h" + str(node.parent.__hash__()))
-                    if node.parent
-                    else None,
+                    "volumetric_parent": (
+                        ("h" + str(node.parent.__hash__())) if node.parent else None
+                    ),
                     "hasChildren": bool(result.children(node)),
                 }
                 item_dict.update(node.asdict())
@@ -534,9 +534,9 @@ class ResultsApi:
                 result.visit(None, visitor, initial_accumulator=[], sort_key=sort_key)
             )
             cached_results = job.get("cached_results", {})
-            cached_results[
-                (job_id, parent_row_id, sort_property, sort_direction)
-            ] = result_list
+            cached_results[(job_id, parent_row_id, sort_property, sort_direction)] = (
+                result_list
+            )
             job["cached_results"] = cached_results
 
         return {
@@ -587,9 +587,9 @@ class ResultsApi:
         file_id = json.loads(file_id)
         if file_id > len(files) or 0 > file_id:
             return None
-        cherrypy.response.headers[
-            "Content-Disposition"
-        ] = 'inline; filename="{}" '.format(files[file_id].preferred_filename)
+        cherrypy.response.headers["Content-Disposition"] = (
+            'inline; filename="{}" '.format(files[file_id].preferred_filename)
+        )
         return files[file_id].getvalue()
 
     @cherrypy.expose
