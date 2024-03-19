@@ -33,7 +33,7 @@
     "@polymer/paper-progress": "^3.0.1",
     "@polymer/paper-tabs": "^3.1.0",
     "@polymer/polymer": "^3.5.1",
-    "@vaadin/vaadin-grid": "^5.9.3",
+    "@vaadin/vaadin-grid": "^5.10.0",
     "@vaadin/vaadin-upload": "^4.4.3",
     "@webcomponents/webcomponentsjs": "^2.8.0",
     "empathy": "0.0.2",
